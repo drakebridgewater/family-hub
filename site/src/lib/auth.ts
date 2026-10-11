@@ -68,6 +68,6 @@ export async function getFamilyUser(request: Request): Promise<FamilyUser | null
 }
 
 export function logoutUrl(): string {
-	const authUrl = env("AUTHELIA_PUBLIC_URL", "https://auth.bridgewater.digital");
+	const authUrl = env("AUTHELIA_PUBLIC_URL", "https://authelia.bridgewater.digital");
 	return `${authUrl}/logout?rd=${encodeURIComponent(SITE_URL.origin + "/")}`;
 }

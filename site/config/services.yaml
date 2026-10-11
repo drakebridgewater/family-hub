@@ -2,51 +2,46 @@
 # Edited live: the site re-reads this file on change (no restart needed).
 #
 #   icon:   a dashboard-icons slug (https://dashboardicons.com), a full image URL, or an emoji
-#   groups: Authelia groups that may SEE the tile. Omit = every signed-in user.
+#   groups: lldap/Authelia groups that may SEE the tile. Omit = every signed-in user.
 #           (Hiding a tile is not security; each service still needs its own
 #           Authelia access_control rule.)
 
 sections:
   - title: Watch & listen
     services:
-      - name: Plex
-        url: https://plex.bridgewater.digital
-        icon: plex
-        description: Movies & TV
-        groups: [family, extended-family]
       - name: Jellyfin
         url: https://jellyfin.bridgewater.digital
         icon: jellyfin
-        description: Movies & TV (alt)
-        groups: [family]
+        description: Movies & TV
+        groups: [family, extended-family]
       - name: Audiobookshelf
-        url: https://audiobooks.bridgewater.digital
+        url: https://bookshelf.bridgewater.digital
         icon: audiobookshelf
         description: Audiobooks & podcasts
         groups: [family, extended-family]
 
-  - title: Photos & files
+  - title: Photos & food
     services:
       - name: Immich
         url: https://photos.bridgewater.digital
         icon: immich
         description: Family photo library
         groups: [family]
-      - name: Nextcloud
-        url: https://cloud.bridgewater.digital
-        icon: nextcloud
-        description: Shared files
+      - name: Mealie
+        url: https://shopping.bridgewater.digital
+        icon: mealie
+        description: Recipes & shopping list
         groups: [family]
 
   - title: Requests & home
     services:
-      - name: Overseerr
+      - name: Requests
         url: https://requests.bridgewater.digital
-        icon: overseerr
+        icon: jellyseerr
         description: Request a movie or show
         groups: [family, extended-family]
       - name: Home Assistant
-        url: https://home.bridgewater.digital
+        url: https://ha.bridgewater.digital
         icon: home-assistant
         description: Lights, locks & cameras
         groups: [family]
@@ -57,14 +52,4 @@ sections:
         url: /_emdash/admin
         icon: ✍️
         description: EmDash editor
-        groups: [admins]
-      - name: Homepage
-        url: https://dash.bridgewater.digital
-        icon: homepage
-        description: Server dashboard
-        groups: [admins]
-      - name: Unraid
-        url: https://tower.bridgewater.digital
-        icon: unraid
-        description: Server admin
-        groups: [admins]
+        groups: [manage-social]

@@ -19,7 +19,7 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/seed ./seed
 COPY --from=build /app/config ./config.default
-# data = SQLite DB, uploads = media, config = services.yaml (all volumes)
+# data = sessions (SQLite in dev), uploads = media, config = services.yaml (all volumes)
 RUN mkdir -p data uploads config && chown -R node:node /app
 COPY --chmod=755 docker-entrypoint.sh /usr/local/bin/
 USER node

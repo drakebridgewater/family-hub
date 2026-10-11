@@ -6,7 +6,7 @@
 |---|---|
 | Anyone | Family feed (EmDash posts, photos, comments) |
 | Signed in via Authelia | Greeting, **app tiles filtered by their Authelia groups**, family schedule, feed |
-| `admins` group | Above + "Write a post" → EmDash editor (`/_emdash/admin`, behind Authelia 2FA) |
+| `manage-social` group | Above + "Write a post" → EmDash editor (`/_emdash/admin`, behind Authelia 2FA) |
 
 ## How sign-in works
 
@@ -17,7 +17,7 @@ Browser ──► Traefik ──► family-hub (public router, no middleware)
                 │                 authelia:9091/api/authz/forward-auth as if for /login
                 │                 200 → Remote-User / Remote-Groups → render apps
                 │
-                └─ /login router ──► authelia@docker middleware ──► 302 back to /
+                └─ /login router ──► default-secure@file (Authelia) ──► 302 back to /
 ```
 
 The page never trusts `Remote-*` request headers. It asks Authelia itself, so a

@@ -7,6 +7,8 @@
 import pg from "pg";
 
 export type HomeTab = "feed" | "schedule" | "apps";
+/** auto = icons in narrow spaces (phone, desktop sidebar), list with descriptions when wide. */
+export type AppView = "auto" | "compact" | "detailed";
 
 export interface Prefs {
 	/** URLs of services the user chose to hide. */
@@ -15,11 +17,14 @@ export interface Prefs {
 	days: number;
 	/** Which tab the home page opens to on phones. */
 	startTab: HomeTab;
+	/** How the app launcher is drawn. */
+	appView: AppView;
 }
 
 export const DAY_CHOICES = [1, 3, 7, 14, 30] as const;
 export const TABS: HomeTab[] = ["feed", "schedule", "apps"];
-export const DEFAULT_PREFS: Prefs = { hidden: [], days: 7, startTab: "feed" };
+export const APP_VIEWS: AppView[] = ["auto", "compact", "detailed"];
+export const DEFAULT_PREFS: Prefs = { hidden: [], days: 7, startTab: "feed", appView: "auto" };
 
 export function normalizePrefs(raw: unknown): Prefs {
 	const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
@@ -28,6 +33,7 @@ export function normalizePrefs(raw: unknown): Prefs {
 		hidden: Array.isArray(r.hidden) ? [...new Set(r.hidden.filter((u): u is string => typeof u === "string"))].slice(0, 200) : [],
 		days: (DAY_CHOICES as readonly number[]).includes(days) ? days : DEFAULT_PREFS.days,
 		startTab: TABS.includes(r.startTab as HomeTab) ? (r.startTab as HomeTab) : DEFAULT_PREFS.startTab,
+		appView: APP_VIEWS.includes(r.appView as AppView) ? (r.appView as AppView) : DEFAULT_PREFS.appView,
 	};
 }
 

@@ -112,17 +112,42 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 					<section id="apps" class="section panel panel--apps" aria-labelledby="apps-title">
 						<div class="section__head">
 							<h2 id="apps-title" class="section__title">Your apps</h2>
-							<a class="section__meta section__link" href="/settings#apps">
-								{hiddenCount ? `${hiddenCount} hidden · Edit` : "Edit"}
-							</a>
+							<span class="apps-tools">
+								<span class="viewswitch" role="group" aria-label="App layout">
+									<button type="button" data-app-view="compact" aria-pressed={String(prefs.appView === "compact")} title="Compact: icons only">▦</button>
+									<button type="button" data-app-view="detailed" aria-pressed={String(prefs.appView === "detailed")} title="Detailed: show descriptions">☰</button>
+								</span>
+								<a class="section__meta section__link" href="/settings#apps">
+									{hiddenCount ? `${hiddenCount} hidden · Edit` : "Edit"}
+								</a>
+							</span>
 						</div>
-						<ServiceGrid sections={visibleSections} />
+						<ServiceGrid sections={visibleSections} view={prefs.appView} />
 					</section>
 				</aside>
 			)
 		}
 	</div>
 </Base>
+
+<script>
+	// Compact/detailed apps switch: apply instantly, then remember it for this user.
+	// Pressing the active button again goes back to "auto" (icons when narrow, details when wide).
+	const apps = document.querySelector<HTMLElement>("#apps .apps");
+	const buttons = document.querySelectorAll<HTMLButtonElement>("[data-app-view]");
+	for (const button of buttons) {
+		button.addEventListener("click", () => {
+			const view = button.getAttribute("aria-pressed") === "true" ? "auto" : button.dataset.appView!;
+			if (apps) apps.dataset.view = view;
+			for (const b of buttons) b.setAttribute("aria-pressed", String(b.dataset.appView === view));
+			fetch("/api/prefs", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ appView: view }),
+			}).catch(() => {});
+		});
+	}
+</script>
 
 <style>
 	.hello {
@@ -160,6 +185,33 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 		.welcome .btn {
 			width: auto;
 		}
+	}
+	.apps-tools {
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+	}
+	.viewswitch {
+		display: inline-flex;
+		border: 1px solid var(--line);
+		border-radius: 999px;
+		overflow: hidden;
+	}
+	.viewswitch button {
+		appearance: none;
+		border: 0;
+		background: transparent;
+		color: var(--muted);
+		font: inherit;
+		font-size: 0.95rem;
+		line-height: 1;
+		width: 34px;
+		height: 28px;
+		cursor: pointer;
+	}
+	.viewswitch button[aria-pressed="true"] {
+		background: var(--accent);
+		color: var(--accent-ink);
 	}
 	.section__link {
 		text-decoration: none;

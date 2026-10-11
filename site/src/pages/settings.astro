@@ -3,7 +3,7 @@ import Base from "../layouts/Base.astro";
 import { getFamilyUser } from "../lib/auth";
 import { servicesFor, resolveIcon } from "../lib/services";
 import { maxScheduleDays, scheduleEnabled } from "../lib/calendar";
-import { DAY_CHOICES, getPrefs, savePrefs, type HomeTab } from "../lib/prefs";
+import { DAY_CHOICES, getPrefs, savePrefs, type AppView, type HomeTab } from "../lib/prefs";
 
 const user = await getFamilyUser(Astro.request);
 if (!user) return Astro.redirect("/login", 302);
@@ -27,6 +27,7 @@ if (Astro.request.method === "POST") {
 		hidden: allUrls.filter((url) => !shown.has(url)),
 		days: Number(form.get("days")),
 		startTab: String(form.get("startTab")) as HomeTab,
+		appView: String(form.get("appView")) as AppView,
 	});
 	return Astro.redirect("/", 303);
 }
@@ -37,6 +38,11 @@ const tabChoices: Array<{ id: HomeTab; label: string }> = [
 	{ id: "feed", label: "Feed" },
 	...(showSchedule ? [{ id: "schedule" as const, label: "Schedule" }] : []),
 	{ id: "apps", label: "Apps" },
+];
+const viewChoices: Array<{ id: AppView; label: string }> = [
+	{ id: "auto", label: "Automatic" },
+	{ id: "compact", label: "Compact" },
+	{ id: "detailed", label: "Detailed" },
 ];
 const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 ---
@@ -82,6 +88,19 @@ const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 
 		<fieldset class="card group" id="apps">
 			<legend>Apps</legend>
+			<p class="hint">
+				Layout: Compact shows icons only, Detailed adds each app's description, Automatic picks by screen space.
+			</p>
+			<div class="chips chips--spaced">
+				{
+					viewChoices.map((v) => (
+						<label class="chip">
+							<input type="radio" name="appView" value={v.id} checked={prefs.appView === v.id} />
+							<span>{v.label}</span>
+						</label>
+					))
+				}
+			</div>
 			<p class="hint">Turn off the ones you don't use. You can turn them back on any time.</p>
 			{
 				sections.map((section) => (
@@ -168,6 +187,9 @@ const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 		display: flex;
 		flex-wrap: wrap;
 		gap: 8px;
+	}
+	.chips--spaced {
+		margin-bottom: 16px;
 	}
 	.chip input {
 		position: absolute;

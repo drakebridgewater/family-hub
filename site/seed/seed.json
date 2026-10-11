@@ -1,0 +1,114 @@
+{
+  "$schema": "https://emdashcms.com/seed.schema.json",
+  "version": "1",
+  "meta": {
+    "name": "Bridgewater Family Hub",
+    "description": "Family feed + service launcher",
+    "author": "Bridgewater"
+  },
+  "settings": {
+    "title": "The Bridgewaters",
+    "tagline": "News, photos and plans from our crew"
+  },
+  "collections": [
+    {
+      "slug": "posts",
+      "label": "Posts",
+      "labelSingular": "Post",
+      "urlPattern": "/posts/{slug}",
+      "supports": [
+        "drafts",
+        "revisions",
+        "preview",
+        "scheduling",
+        "search"
+      ],
+      "commentsEnabled": true,
+      "fields": [
+        {
+          "slug": "title",
+          "label": "Title",
+          "type": "string",
+          "required": true,
+          "searchable": true
+        },
+        {
+          "slug": "featured_image",
+          "label": "Photo",
+          "type": "image"
+        },
+        {
+          "slug": "excerpt",
+          "label": "Short update (shown in the feed)",
+          "type": "text"
+        },
+        {
+          "slug": "content",
+          "label": "Full post",
+          "type": "portableText",
+          "searchable": true
+        }
+      ]
+    },
+    {
+      "slug": "pages",
+      "label": "Pages",
+      "labelSingular": "Page",
+      "urlPattern": "/pages/{slug}",
+      "supports": [
+        "drafts",
+        "revisions",
+        "preview"
+      ],
+      "fields": [
+        {
+          "slug": "title",
+          "label": "Title",
+          "type": "string",
+          "required": true
+        },
+        {
+          "slug": "content",
+          "label": "Content",
+          "type": "portableText"
+        }
+      ]
+    }
+  ],
+  "taxonomies": [
+    {
+      "name": "tag",
+      "label": "Tags",
+      "labelSingular": "Tag",
+      "hierarchical": false,
+      "collections": [
+        "posts"
+      ],
+      "terms": [
+        {
+          "slug": "milestones",
+          "label": "Milestones"
+        },
+        {
+          "slug": "trips",
+          "label": "Trips"
+        },
+        {
+          "slug": "photos",
+          "label": "Photos"
+        },
+        {
+          "slug": "announcements",
+          "label": "Announcements"
+        }
+      ]
+    }
+  ],
+  "bylines": [
+    {
+      "id": "byline-family",
+      "slug": "the-bridgewaters",
+      "displayName": "The Bridgewaters"
+    }
+  ]
+}

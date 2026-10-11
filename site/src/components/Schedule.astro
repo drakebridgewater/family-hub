@@ -1,0 +1,98 @@
+---
+import type { ScheduleItem } from "../lib/calendar";
+import { groupByDay } from "../lib/calendar";
+
+interface Props {
+	items: ScheduleItem[];
+	/** Max number of days to show. */
+	days?: number;
+}
+const { items, days = 7 } = Astro.props;
+const grouped = groupByDay(items).slice(0, days);
+---
+
+{
+	grouped.length === 0 ? (
+		<p class="empty card">Nothing on the calendar right now. 🌤️</p>
+	) : (
+		<ol class="days" role="list">
+			{grouped.map((day) => (
+				<li class="day card">
+					<h3 class="day__label">{day.label}</h3>
+					<ul class="events" role="list">
+						{day.items.map((ev) => (
+							<li class="event" style={`--cal:${ev.color}`}>
+								<span class="event__time">{ev.time}</span>
+								<span class="event__body">
+									<span class="event__title">{ev.title}</span>
+									<span class="event__meta">
+										{ev.calendar}
+										{ev.location && ` · ${ev.location}`}
+									</span>
+								</span>
+							</li>
+						))}
+					</ul>
+				</li>
+			))}
+		</ol>
+	)
+}
+
+<style>
+	.days {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 10px;
+	}
+	.day {
+		padding: 14px 16px;
+	}
+	.day__label {
+		margin: 0 0 8px;
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--accent);
+	}
+	.events {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 10px;
+	}
+	.event {
+		display: grid;
+		grid-template-columns: 72px 1fr;
+		gap: 10px;
+		align-items: start;
+	}
+	.event__time {
+		font-size: 0.85rem;
+		font-variant-numeric: tabular-nums;
+		color: var(--muted);
+		padding-top: 1px;
+	}
+	.event__body {
+		display: grid;
+		border-left: 3px solid var(--cal);
+		padding-left: 10px;
+		min-width: 0;
+	}
+	.event__title {
+		font-weight: 600;
+		overflow-wrap: anywhere;
+	}
+	.event__meta {
+		font-size: 0.8rem;
+		color: var(--muted);
+		overflow-wrap: anywhere;
+	}
+	.empty {
+		padding: 16px;
+		margin: 0;
+		color: var(--muted);
+	}
+</style>

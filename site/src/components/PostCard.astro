@@ -1,0 +1,124 @@
+---
+import type { ContentEntry, InferCollectionData } from "emdash";
+import { Image } from "emdash/ui";
+
+interface Props {
+	post: ContentEntry<InferCollectionData<"posts">>;
+	priority?: boolean;
+}
+const { post, priority = false } = Astro.props;
+
+const href = `/posts/${post.id}`;
+const author = post.data.bylines?.[0]?.byline?.displayName ?? post.data.byline?.displayName ?? "The Bridgewaters";
+const published = post.data.publishedAt ?? post.data.createdAt;
+const when = published
+	? new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(
+			-Math.max(0, Math.round((Date.now() - new Date(published).getTime()) / 86_400_000)),
+			"day",
+		)
+	: "";
+const initials = author
+	.replace(/^The\s+/i, "")
+	.split(/\s+/)
+	.map((p: string) => p[0])
+	.join("")
+	.slice(0, 2)
+	.toUpperCase();
+---
+
+<article class="post card">
+	<header class="post__head">
+		<span class="post__avatar" aria-hidden="true">{initials}</span>
+		<span class="post__who">
+			<strong>{author}</strong>
+			{published && <time datetime={new Date(published).toISOString()}>{when}</time>}
+		</span>
+	</header>
+
+	<a href={href} class="post__link">
+		<h2 class="post__title">{post.data.title}</h2>
+		{post.data.excerpt && <p class="post__excerpt">{post.data.excerpt}</p>}
+	</a>
+
+	{
+		post.data.featured_image && (
+			<a href={href} class="post__media" tabindex="-1" aria-hidden="true">
+				<Image image={post.data.featured_image} sizes="(min-width: 640px) 608px, 100vw" priority={priority} />
+			</a>
+		)
+	}
+
+	<footer class="post__foot">
+		<a href={`${href}#comments`}>💬 Comments</a>
+		<a href={href}>Read more →</a>
+	</footer>
+</article>
+
+<style>
+	.post {
+		overflow: hidden;
+	}
+	.post__head {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 14px 16px 0;
+	}
+	.post__avatar {
+		width: 36px;
+		height: 36px;
+		border-radius: 50%;
+		display: grid;
+		place-items: center;
+		background: var(--accent-soft);
+		color: var(--accent);
+		font-weight: 700;
+		font-size: 0.8rem;
+		flex-shrink: 0;
+	}
+	.post__who {
+		display: grid;
+		line-height: 1.25;
+		font-size: 0.9rem;
+	}
+	.post__who time {
+		color: var(--muted);
+		font-size: 0.8rem;
+	}
+	.post__link {
+		display: block;
+		text-decoration: none;
+		padding: 10px 16px 12px;
+	}
+	.post__title {
+		font-family: var(--font-serif);
+		font-size: 1.2rem;
+		line-height: 1.25;
+		margin: 0;
+	}
+	.post__excerpt {
+		margin: 6px 0 0;
+		color: var(--muted);
+	}
+	.post__media :global(img) {
+		width: 100%;
+		max-height: 70vh;
+		object-fit: cover;
+	}
+	.post__foot {
+		display: flex;
+		justify-content: space-between;
+		padding: 12px 16px;
+		border-top: 1px solid var(--line);
+		font-size: 0.875rem;
+		font-weight: 600;
+	}
+	.post__foot a {
+		text-decoration: none;
+		color: var(--muted);
+		min-height: 24px;
+	}
+	.post__foot a:last-child {
+		color: var(--accent);
+	}
+</style>

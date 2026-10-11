@@ -1,0 +1,34 @@
+# Merge these into Authelia's configuration.yml -> access_control.rules.
+# Rules are first-match, so put them ABOVE any catch-all rule for *.bridgewater.digital.
+
+access_control:
+  rules:
+    # EmDash editor: admins only, with 2FA
+    - domain: social.bridgewater.digital
+      resources:
+        - '^/_emdash/admin([/?].*)?$'
+      subject:
+        - 'group:admins'
+      policy: two_factor
+
+    # The "Family sign in" button. The site also uses this rule to check,
+    # server-side, whether a visitor already has a session.
+    - domain: social.bridgewater.digital
+      resources:
+        - '^/login([?].*)?$'
+      policy: one_factor
+
+    # Everything else on the hub is public (the social feed)
+    - domain: social.bridgewater.digital
+      policy: bypass
+
+# Make sure the session cookie covers the hub, e.g. (Authelia 4.38+):
+# session:
+#   cookies:
+#     - domain: bridgewater.digital
+#       authelia_url: https://auth.bridgewater.digital
+#
+# Example users_database.yml groups used by site/config/services.yaml:
+#   groups: [family]            -> household
+#   groups: [extended-family]   -> grandparents, cousins…
+#   groups: [family, admins]    -> you

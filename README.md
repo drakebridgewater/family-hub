@@ -45,6 +45,9 @@ forged header just gets the public view.
 ## Day-to-day
 
 - **Post an update:** EmDash admin → Posts → New. The *Short update* field is what shows in the feed card.
+- **Family-only post:** turn on *Family only* when writing it. Visitors who aren't signed in won't see it in the feed,
+  and its link shows a sign-in prompt instead. (Existing installs: add a Boolean field `members_only` to Posts once,
+  under Content types.) Photos in it are still reachable by their direct URL.
 - **Add or remove apps:** edit `/mnt/user/appdata/family-hub/config/services.yaml`. Changes apply on the next page load.
   `icon:` accepts a [dashboard-icons](https://dashboardicons.com) slug, an image URL, or an emoji.
 - **Give someone access:** add them to Authelia's `users_database.yml` with `family` or `extended-family` groups.

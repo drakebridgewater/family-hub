@@ -8,6 +8,7 @@ import { getFamilyUser } from "../lib/auth";
 import { servicesFor, withoutHidden } from "../lib/services";
 import { getSchedule, scheduleEnabled } from "../lib/calendar";
 import { DEFAULT_PREFS, getPrefs, TABS, type HomeTab } from "../lib/prefs";
+import { isMembersOnly } from "../lib/visibility";
 
 const PAGE_SIZE = 10;
 const user = await getFamilyUser(Astro.request);
@@ -16,12 +17,14 @@ const user = await getFamilyUser(Astro.request);
 const schedulePublic = (process.env.SCHEDULE_VISIBILITY ?? "members") === "public";
 const showSchedule = scheduleEnabled() && (schedulePublic || !!user);
 
-const [{ entries: posts }, sections, schedule, prefs] = await Promise.all([
-	getEmDashCollection("posts", { orderBy: { published_at: "desc" }, limit: PAGE_SIZE }),
+const [{ entries: recent }, sections, schedule, prefs] = await Promise.all([
+	// Over-fetch for visitors so hiding family-only posts still fills a page.
+	getEmDashCollection("posts", { orderBy: { published_at: "desc" }, limit: user ? PAGE_SIZE : PAGE_SIZE * 3 }),
 	user ? servicesFor(user) : Promise.resolve([]),
 	showSchedule ? getSchedule() : Promise.resolve([]),
 	user ? getPrefs(user.username) : Promise.resolve(DEFAULT_PREFS),
 ]);
+const posts = (user ? recent : recent.filter((post) => !isMembersOnly(post))).slice(0, PAGE_SIZE);
 const visibleSections = withoutHidden(sections, prefs.hidden);
 const hiddenCount = sections.reduce((n, s) => n + s.services.length, 0) - visibleSections.reduce((n, s) => n + s.services.length, 0);
 const scheduleLabel = prefs.days === 1 ? "Today" : `Next ${prefs.days} days`;

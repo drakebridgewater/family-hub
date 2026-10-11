@@ -25,7 +25,16 @@ const AUTHELIA_AUTHZ_PATH = env("AUTHELIA_AUTHZ_PATH", "/api/authz/forward-auth"
 const AUTHELIA_SESSION_COOKIE = env("AUTHELIA_SESSION_COOKIE", "authelia_session");
 const SITE_URL = new URL(env("EMDASH_SITE_URL", "https://social.bridgewater.digital"));
 
-export async function getFamilyUser(request: Request): Promise<FamilyUser | null> {
+export function getFamilyUser(request: Request): Promise<FamilyUser | null> {
+	return checkAuthelia(request, "/login");
+}
+
+/**
+ * Ask Authelia whether this visitor may open `uri` on the hub. The answer
+ * follows the access_control rule for that path, so "/login" means "signed in
+ * at all" and "/_emdash/admin" means "allowed into the editor" (group + 2FA).
+ */
+export async function checkAuthelia(request: Request, uri: string): Promise<FamilyUser | null> {
 	const cookie = request.headers.get("cookie");
 	if (!cookie || !cookie.includes(`${AUTHELIA_SESSION_COOKIE}=`)) return null;
 
@@ -40,7 +49,7 @@ export async function getFamilyUser(request: Request): Promise<FamilyUser | null
 				"X-Forwarded-Method": "GET",
 				"X-Forwarded-Proto": SITE_URL.protocol.replace(":", ""),
 				"X-Forwarded-Host": SITE_URL.host,
-				"X-Forwarded-Uri": "/login",
+				"X-Forwarded-Uri": uri,
 				"X-Forwarded-For":
 					request.headers.get("x-real-ip") ??
 					request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??

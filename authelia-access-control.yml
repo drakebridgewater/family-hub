@@ -3,14 +3,24 @@
 
 access_control:
   rules:
-    # EmDash editor: manage-social only, with 2FA. The deny is required:
-    # a non-matching subject rule falls through to the bypass below.
+    # EmDash editor. EmDash also asks Authelia about this path on every editor
+    # request (site/src/lib/emdash-auth.ts), so these rules decide who can
+    # write; lldap groups then set the role (see astro.config.mjs).
+    # manage-social = admin with 2FA; family/extended-family = author/contributor.
+    # The deny is required: a non-matching subject rule falls through to the bypass below.
     - domain: social.bridgewater.digital
       resources:
         - '^/_emdash/admin([/?].*)?$'
       subject:
         - 'group:manage-social'
       policy: two_factor
+    - domain: social.bridgewater.digital
+      resources:
+        - '^/_emdash/admin([/?].*)?$'
+      subject:
+        - 'group:family'
+        - 'group:extended-family'
+      policy: one_factor
     - domain: social.bridgewater.digital
       resources:
         - '^/_emdash/admin([/?].*)?$'

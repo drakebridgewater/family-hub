@@ -1,5 +1,6 @@
 import node from "@astrojs/node";
 import react from "@astrojs/react";
+import { fileURLToPath } from "node:url";
 import { defineConfig, sessionDrivers } from "astro/config";
 import emdash, { local } from "emdash/astro";
 import { postgres, sqlite } from "emdash/db";
@@ -26,6 +27,23 @@ export default defineConfig({
 		react(),
 		emdash({
 			database,
+			// Editor sign-in comes from Authelia (site/src/lib/emdash-auth.ts);
+			// this turns off EmDash's own passkey login. Group -> role level:
+			// 50 admin, 40 editor, 30 author (write + publish own posts),
+			// 20 contributor (drafts only). Roles re-sync from lldap each visit.
+			auth: {
+				type: "authelia",
+				entrypoint: fileURLToPath(new URL("./src/lib/emdash-auth.ts", import.meta.url)),
+				config: {
+					roleGroups: [
+						["manage-social", 50],
+						["family", 30],
+						["extended-family", 20],
+					],
+					autoProvision: true,
+					syncRoles: true,
+				},
+			},
 			storage: local({
 				directory: "./uploads",
 				baseUrl: "/_emdash/api/media/file",

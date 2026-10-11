@@ -10,7 +10,8 @@ export const EDITOR_ROLE_GROUPS: [string, number][] = [
 	["extended-family", 20],
 ];
 
-export const NEW_POST_URL = "/_emdash/admin/content/posts/new";
+export const EDITOR_URL = "/_emdash/admin";
+export const NEW_POST_URL = `${EDITOR_URL}/content/posts/new`;
 
 export function canPost(groups: string[]): boolean {
 	return EDITOR_ROLE_GROUPS.some(([group]) => groups.includes(group));

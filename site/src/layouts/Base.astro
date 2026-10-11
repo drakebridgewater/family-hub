@@ -4,6 +4,7 @@ import { createPublicPageContext } from "emdash/page";
 import { EmDashBodyEnd, EmDashBodyStart, EmDashHead, Image } from "emdash/ui";
 import type { FamilyUser } from "../lib/auth";
 import { logoutUrl } from "../lib/auth";
+import { canPost, EDITOR_URL } from "../lib/editor-roles";
 import "../styles/global.css";
 
 interface Props {
@@ -146,6 +147,11 @@ const initials = (user?.name ?? "")
 									<strong>{user.name}</strong>
 									<span>{user.email || user.username}</span>
 								</p>
+								{canPost(user.groups) && (
+									<a href={EDITOR_URL} class="btn">
+										<span aria-hidden="true">✍️</span> Write &amp; edit
+									</a>
+								)}
 								<a href="/settings" class="btn btn--ghost">Customize home</a>
 								<a href={logoutUrl()} class="btn btn--ghost">Sign out</a>
 							</div>

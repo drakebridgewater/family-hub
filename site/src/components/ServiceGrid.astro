@@ -1,11 +1,13 @@
 ---
+import type { AppView } from "../lib/prefs";
 import type { ServiceSection } from "../lib/services";
 import { resolveIcon } from "../lib/services";
 
 interface Props {
 	sections: ServiceSection[];
+	view?: AppView;
 }
-const { sections } = Astro.props;
+const { sections, view = "auto" } = Astro.props;
 ---
 
 {
@@ -14,7 +16,7 @@ const { sections } = Astro.props;
 			You're signed in, but no services are shared with your account yet. Ask a family admin to add you to a group.
 		</p>
 	) : (
-		<div class="apps">
+		<div class="apps" data-view={view}>
 		{sections.map((section) => (
 			<div class="group">
 				{section.title && <h3 class="group__title">{section.title}</h3>}
@@ -60,13 +62,13 @@ const { sections } = Astro.props;
 		text-transform: uppercase;
 		color: var(--muted);
 	}
-	/* Phone-home-screen style: 4 across on phones, roomier on larger screens. */
+	/* Icon grid, phone-home-screen style (compact, and auto when narrow). */
 	.grid {
 		list-style: none;
 		margin: 0;
 		padding: 0;
 		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
 		gap: 14px 8px;
 	}
 	.tile {
@@ -111,13 +113,65 @@ const { sections } = Astro.props;
 	.tile__desc {
 		display: none;
 	}
+
+	/* Detailed: rows with descriptions, one column, two when there's room. */
+	.apps[data-view="detailed"] .grid {
+		grid-template-columns: repeat(1, minmax(0, 1fr));
+		gap: 10px;
+	}
+	.apps[data-view="detailed"] .tile {
+		grid-template-columns: 44px 1fr;
+		grid-template-rows: auto auto;
+		justify-items: start;
+		align-items: center;
+		column-gap: 12px;
+		row-gap: 0;
+		text-align: left;
+		padding: 10px 12px;
+		background: var(--surface);
+		border: 1px solid var(--line);
+	}
+	.apps[data-view="detailed"] .tile:hover {
+		border-color: var(--accent);
+	}
+	.apps[data-view="detailed"] .tile__icon {
+		grid-row: span 2;
+		width: 44px;
+		height: 44px;
+		border-radius: 12px;
+		box-shadow: none;
+		background: var(--surface-2);
+		border: 0;
+	}
+	.apps[data-view="detailed"] .tile__icon img {
+		width: 30px;
+		height: 30px;
+	}
+	.apps[data-view="detailed"] .tile__name {
+		font-size: 0.95rem;
+		align-self: end;
+		white-space: normal;
+	}
+	.apps[data-view="detailed"] .tile__desc {
+		display: block;
+		font-size: 0.8rem;
+		color: var(--muted);
+		align-self: start;
+	}
 	@container (min-width: 520px) {
-		.grid {
+		.apps[data-view="detailed"] .grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	/* Auto: icons when narrow, the detailed rows when wide. */
+	@container (min-width: 520px) {
+		.apps[data-view="auto"] .grid {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
 			gap: 10px;
 		}
-		.tile {
-			grid-template-columns: 52px 1fr;
+		.apps[data-view="auto"] .tile {
+			grid-template-columns: 44px 1fr;
 			grid-template-rows: auto auto;
 			justify-items: start;
 			align-items: center;
@@ -128,29 +182,35 @@ const { sections } = Astro.props;
 			background: var(--surface);
 			border: 1px solid var(--line);
 		}
-		.tile:hover {
+		.apps[data-view="auto"] .tile:hover {
 			border-color: var(--accent);
 		}
-		.tile__icon {
+		.apps[data-view="auto"] .tile__icon {
 			grid-row: span 2;
-			width: 52px;
-			height: 52px;
+			width: 44px;
+			height: 44px;
+			border-radius: 12px;
 			box-shadow: none;
 			background: var(--surface-2);
 			border: 0;
 		}
-		.tile__name {
+		.apps[data-view="auto"] .tile__icon img {
+			width: 30px;
+			height: 30px;
+		}
+		.apps[data-view="auto"] .tile__name {
 			font-size: 0.95rem;
 			align-self: end;
 			white-space: normal;
 		}
-		.tile__desc {
+		.apps[data-view="auto"] .tile__desc {
 			display: block;
 			font-size: 0.8rem;
 			color: var(--muted);
 			align-self: start;
 		}
 	}
+
 	.empty {
 		padding: 16px;
 		margin: 0;

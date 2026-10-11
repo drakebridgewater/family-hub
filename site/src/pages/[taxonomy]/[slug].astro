@@ -1,0 +1,29 @@
+---
+/** /category/<slug> and /tag/<slug>: posts with that term. */
+import { getEmDashCollection, getTerm } from "emdash";
+import Base from "../../layouts/Base.astro";
+import PostList from "../../components/PostList.astro";
+import { getFamilyUser } from "../../lib/auth";
+import { TAXONOMIES, type TaxonomyName } from "../../lib/terms";
+import { isMembersOnly } from "../../lib/visibility";
+
+const taxonomy = Astro.params.taxonomy as TaxonomyName;
+const slug = Astro.params.slug;
+if (!TAXONOMIES.includes(taxonomy) || !slug) return Astro.rewrite("/404");
+
+const [term, user] = await Promise.all([getTerm(taxonomy, slug), getFamilyUser(Astro.request)]);
+if (!term) return Astro.rewrite("/404");
+
+const { entries } = await getEmDashCollection("posts", {
+	where: { [taxonomy]: slug },
+	orderBy: { published_at: "desc" },
+	limit: 50,
+});
+const posts = user ? entries : entries.filter((p) => !isMembersOnly(p));
+
+Astro.response.headers.set("Cache-Control", "private, no-store");
+---
+
+<Base title={term.label} user={user}>
+	<PostList posts={posts} heading={taxonomy === "tag" ? `#${term.label}` : term.label} eyebrow={taxonomy === "tag" ? "Tag" : "Category"} />
+</Base>

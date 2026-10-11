@@ -1,5 +1,7 @@
 ---
-import { getEmDashCollection } from "emdash";
+import { getEmDashCollection, getWidgetArea } from "emdash";
+import { WidgetArea } from "emdash/ui";
+import { termsForPosts } from "../lib/terms";
 import Base from "../layouts/Base.astro";
 import PostCard from "../components/PostCard.astro";
 import ServiceGrid from "../components/ServiceGrid.astro";
@@ -26,6 +28,10 @@ const [{ entries: recent }, sections, schedule, prefs] = await Promise.all([
 	user ? getPrefs(user.username) : Promise.resolve(DEFAULT_PREFS),
 ]);
 const posts = (user ? recent : recent.filter((post) => !isMembersOnly(post))).slice(0, PAGE_SIZE);
+const [postTerms, sidebarArea] = await Promise.all([termsForPosts(posts.map((p) => p.data.id)), getWidgetArea("sidebar")]);
+const hasWidgets = (sidebarArea?.widgets.length ?? 0) > 0;
+// Two columns on desktop when there's something for the sidebar.
+const split = !!user || hasWidgets;
 const visibleSections = withoutHidden(sections, prefs.hidden);
 const hiddenCount = sections.reduce((n, s) => n + s.services.length, 0) - visibleSections.reduce((n, s) => n + s.services.length, 0);
 const showNewPost = !!user && canPost(user.groups);
@@ -59,7 +65,7 @@ const tabIds = tabs.map((t) => t.id);
 const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) && tabIds.includes(t)) ?? tabIds[0];
 ---
 
-<Base user={user} tabs={tabs} activeTab={activeTab} wide={!!user}>
+<Base user={user} tabs={tabs} activeTab={activeTab} wide={split}>
 	{
 		user ? (
 			<section class="hello" aria-labelledby="hello-title">
@@ -79,7 +85,7 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 		)
 	}
 
-	<div class:list={["home", { "home--split": !!user }]}>
+	<div class:list={["home", { "home--split": split }]}>
 		<section id="feed" class="section panel panel--feed" aria-labelledby="feed-title">
 			<div class="section__head">
 				<h2 id="feed-title" class="section__title">Family feed</h2>
@@ -101,16 +107,18 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 				) : (
 					<div class="feed">
 						{posts.map((post, i) => (
-							<PostCard post={post} priority={i === 0} />
+							<PostCard post={post} priority={i === 0} terms={postTerms.get(post.data.id)} />
 						))}
 					</div>
 				)
 			}
 		</section>
 
-		{
-			user && (
-				<aside class="side" aria-label="Schedule and apps">
+		{split && (
+		<aside class="side" aria-label="Schedule, apps and more">
+			{
+				user && (
+					<>
 					{showSchedule && (
 						<section id="schedule" class="section panel panel--schedule" aria-labelledby="schedule-title">
 							<div class="section__head">
@@ -137,9 +145,17 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 						</div>
 						<ServiceGrid sections={visibleSections} view={prefs.appView} />
 					</section>
-				</aside>
-			)
-		}
+					</>
+				)
+			}
+			{/* EmDash widgets: create a widget area named "sidebar" in the admin. On phones they show under the feed. */}
+			{hasWidgets && (
+				<section class="section panel panel--feed widgets">
+					<WidgetArea name="sidebar" />
+				</section>
+			)}
+		</aside>
+		)}
 	</div>
 </Base>
 
@@ -277,6 +293,49 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 		.side .section:first-child {
 			margin-top: 28px;
 		}
+	}
+	.widgets :global(.widget-area) {
+		display: grid;
+		gap: 16px;
+	}
+	.widgets :global(.widget) {
+		background: var(--surface);
+		border: 1px solid var(--line);
+		border-radius: var(--radius);
+		box-shadow: var(--shadow);
+		padding: 14px 16px;
+	}
+	.widgets :global(.widget__title) {
+		margin: 0 0 8px;
+		font-family: var(--font-serif);
+		font-size: 1.1rem;
+		font-weight: 600;
+	}
+	.widgets :global(ul) {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 2px;
+	}
+	.widgets :global(li) {
+		display: flex;
+		justify-content: space-between;
+		gap: 8px;
+		color: var(--muted);
+		font-size: 0.9rem;
+	}
+	.widgets :global(a) {
+		color: var(--text);
+		text-decoration: none;
+		font-weight: 600;
+		padding: 4px 0;
+	}
+	.widgets :global(a:hover) {
+		color: var(--accent);
+	}
+	.widgets :global(.widget__content > :first-child) {
+		margin-top: 0;
 	}
 	.feed {
 		display: grid;

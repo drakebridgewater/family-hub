@@ -1,0 +1,43 @@
+---
+import { decodeSlug, getEmDashEntry } from "emdash";
+import { createPublicPageContext } from "emdash/page";
+import { Image, PortableText } from "emdash/ui";
+import Base from "../../layouts/Base.astro";
+import { getFamilyUser } from "../../lib/auth";
+
+const slug = decodeSlug(Astro.params.slug);
+if (!slug) return Astro.rewrite("/404");
+
+const [{ entry }, user] = await Promise.all([getEmDashEntry("pages", slug), getFamilyUser(Astro.request)]);
+if (!entry) return Astro.rewrite("/404");
+
+Astro.response.headers.set("Cache-Control", "private, no-store");
+
+const data = entry.data as Record<string, any>;
+const page = createPublicPageContext({
+	Astro,
+	kind: "content",
+	pageType: "website",
+	title: data.title,
+	content: { collection: "pages", id: data.id, slug },
+});
+---
+
+<Base title={data.title} user={user} page={page}>
+	<a href="/" class="back">← Home</a>
+	<article class="article card">
+		{
+			data.featured_image && (
+				<div class="article__media" {...entry.edit.featured_image}>
+					<Image image={data.featured_image} sizes="(min-width: 640px) 608px, 100vw" priority />
+				</div>
+			)
+		}
+		<div class="article__body">
+			<h1 class="article__title" {...entry.edit.title}>{data.title}</h1>
+			<div class="prose">
+				<PortableText value={data.content} />
+			</div>
+		</div>
+	</article>
+</Base>

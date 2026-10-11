@@ -2,12 +2,15 @@
 import type { ContentEntry, InferCollectionData } from "emdash";
 import { Image } from "emdash/ui";
 import { isMembersOnly } from "../lib/visibility";
+import type { PostTerms } from "../lib/terms";
+import Terms from "./Terms.astro";
 
 interface Props {
 	post: ContentEntry<InferCollectionData<"posts">>;
 	priority?: boolean;
+	terms?: PostTerms;
 }
-const { post, priority = false } = Astro.props;
+const { post, priority = false, terms } = Astro.props;
 
 const href = `/posts/${post.id}`;
 const familyOnly = isMembersOnly(post);
@@ -51,6 +54,12 @@ const initials = author
 		)
 	}
 
+	{terms && (terms.category.length > 0 || terms.tag.length > 0) && (
+		<div class="post__terms">
+			<Terms terms={terms} />
+		</div>
+	)}
+
 	<footer class="post__foot">
 		<a href={`${href}#comments`}>💬 Comments</a>
 		<a href={href}>Read more →</a>
@@ -60,6 +69,9 @@ const initials = author
 <style>
 	.post {
 		overflow: hidden;
+	}
+	.post__terms {
+		padding: 0 16px 12px;
 	}
 	.post__badge {
 		margin-left: auto;

@@ -1,0 +1,36 @@
+---
+/** /archives/<year> and /archives/<year>/<month>, as linked by EmDash's Archives widget. */
+import { getEmDashCollection } from "emdash";
+import Base from "../../layouts/Base.astro";
+import PostList from "../../components/PostList.astro";
+import { getFamilyUser } from "../../lib/auth";
+import { isMembersOnly } from "../../lib/visibility";
+
+const match = /^(\d{4})(?:\/(\d{1,2}))?$/.exec(Astro.params.period ?? "");
+if (!match) return Astro.rewrite("/404");
+const year = Number(match[1]);
+const month = match[2] ? Number(match[2]) : null;
+if (month !== null && (month < 1 || month > 12)) return Astro.rewrite("/404");
+
+const from = new Date(Date.UTC(year, month ? month - 1 : 0, 1));
+const to = new Date(Date.UTC(month ? year : year + 1, month ? month : 0, 1));
+
+const [{ entries }, user] = await Promise.all([
+	getEmDashCollection("posts", {
+		where: { published_at: { gte: from.toISOString(), lt: to.toISOString() } },
+		orderBy: { published_at: "desc" },
+		limit: 100,
+	}),
+	getFamilyUser(Astro.request),
+]);
+const posts = user ? entries : entries.filter((p) => !isMembersOnly(p));
+const heading = month
+	? new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric", timeZone: "UTC" }).format(from)
+	: String(year);
+
+Astro.response.headers.set("Cache-Control", "private, no-store");
+---
+
+<Base title={heading} user={user}>
+	<PostList posts={posts} heading={heading} eyebrow="Archive" />
+</Base>

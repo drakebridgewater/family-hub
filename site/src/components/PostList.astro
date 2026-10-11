@@ -1,0 +1,60 @@
+---
+/** A titled list of post cards, for category, tag and archive pages. */
+import type { ContentEntry } from "emdash";
+import PostCard from "./PostCard.astro";
+import { termsForPosts } from "../lib/terms";
+
+interface Props {
+	posts: ContentEntry<any>[];
+	heading: string;
+	eyebrow: string;
+}
+const { posts, heading, eyebrow } = Astro.props;
+const terms = await termsForPosts(posts.map((p) => p.data.id));
+---
+
+<a href="/" class="back">← Back to the feed</a>
+<header class="list-head">
+	<p class="list-head__eyebrow">{eyebrow}</p>
+	<h1 class="list-head__title">{heading}</h1>
+</header>
+{
+	posts.length === 0 ? (
+		<p class="card empty">No posts here yet.</p>
+	) : (
+		<div class="list">
+			{posts.map((post, i) => (
+				<PostCard post={post} priority={i === 0} terms={terms.get(post.data.id)} />
+			))}
+		</div>
+	)
+}
+
+<style>
+	.list-head {
+		margin: 4px 0 16px;
+	}
+	.list-head__eyebrow {
+		margin: 0;
+		color: var(--muted);
+		font-size: 0.8rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+	.list-head__title {
+		font-family: var(--font-serif);
+		font-size: clamp(1.6rem, 7vw, 2.2rem);
+		line-height: 1.15;
+		margin: 4px 0 0;
+	}
+	.list {
+		display: grid;
+		gap: 16px;
+	}
+	.empty {
+		padding: 16px;
+		margin: 0;
+		color: var(--muted);
+	}
+</style>

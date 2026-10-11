@@ -1,0 +1,28 @@
+---
+import type { PostTerms } from "../lib/terms";
+
+interface Props {
+	terms?: PostTerms;
+}
+const { terms } = Astro.props;
+const chips = terms
+	? [
+			...terms.category.map((t) => ({ href: `/category/${t.slug}`, label: t.label })),
+			...terms.tag.map((t) => ({ href: `/tag/${t.slug}`, label: `#${t.label}` })),
+		]
+	: [];
+---
+
+{
+	chips.length > 0 && (
+		<ul class="chips-row" role="list" aria-label="Categories and tags">
+			{chips.map((c) => (
+				<li>
+					<a class="term" href={c.href}>
+						{c.label}
+					</a>
+				</li>
+			))}
+		</ul>
+	)
+}

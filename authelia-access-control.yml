@@ -3,13 +3,18 @@
 
 access_control:
   rules:
-    # EmDash editor: admins only, with 2FA
+    # EmDash editor: manage-social only, with 2FA. The deny is required:
+    # a non-matching subject rule falls through to the bypass below.
     - domain: social.example.com
       resources:
         - '^/_emdash/admin([/?].*)?$'
       subject:
-        - 'group:admins'
+        - 'group:manage-social'
       policy: two_factor
+    - domain: social.example.com
+      resources:
+        - '^/_emdash/admin([/?].*)?$'
+      policy: deny
 
     # The "Family sign in" button. The site also uses this rule to check,
     # server-side, whether a visitor already has a session.
@@ -26,9 +31,9 @@ access_control:
 # session:
 #   cookies:
 #     - domain: example.com
-#       authelia_url: https://auth.example.com
+#       authelia_url: https://authelia.example.com
 #
 # Example users_database.yml groups used by site/config/services.yaml:
 #   groups: [family]            -> household
 #   groups: [extended-family]   -> grandparents, cousins…
-#   groups: [family, admins]    -> you
+#   groups: [family, manage-social] -> can open the EmDash editor

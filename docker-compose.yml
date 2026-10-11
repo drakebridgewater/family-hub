@@ -16,11 +16,19 @@ services:
     restart: unless-stopped
     user: "${PUID:-99}:${PGID:-100}"   # Unraid nobody:users
     environment:
-      TZ: ${TZ:-America/Chicago}
-      SITE_TIMEZONE: ${TZ:-America/Chicago}
+      TZ: ${TZ:-America/Los_Angeles}
+      SITE_TIMEZONE: ${TZ:-America/Los_Angeles}
       # --- EmDash ---
       EMDASH_SITE_URL: https://${SITE_HOST}   # passkeys are bound to this exact host
       EMDASH_ENCRYPTION_KEY: ${EMDASH_ENCRYPTION_KEY}
+      # --- Postgres (existing server on the proxy network) ---
+      # Keep DB_PASSWORD URL-safe (e.g. openssl rand -hex 24); it's embedded in DATABASE_URL.
+      DATABASE_URL: postgres://${DB_USER:-familyhub}:${DB_PASSWORD}@${DB_HOST:-postgresql17}:${DB_PORT:-5432}/${DB_NAME:-familyhub}
+      PGHOST: ${DB_HOST:-postgresql17}
+      PGPORT: ${DB_PORT:-5432}
+      PGUSER: ${DB_USER:-familyhub}
+      PGPASSWORD: ${DB_PASSWORD}
+      PGDATABASE: ${DB_NAME:-familyhub}
       # --- Authelia (soft session check, see site/src/lib/auth.ts) ---
       AUTHELIA_INTERNAL_URL: ${AUTHELIA_INTERNAL_URL:-http://authelia:9091}
       AUTHELIA_PUBLIC_URL: ${AUTHELIA_PUBLIC_URL}
@@ -30,7 +38,7 @@ services:
       SCHEDULE_VISIBILITY: ${SCHEDULE_VISIBILITY:-members}
       CALENDAR_DAYS_AHEAD: ${CALENDAR_DAYS_AHEAD:-21}
     volumes:
-      - ${APPDATA:-/mnt/user/appdata/family-hub}/data:/app/data         # SQLite DB
+      - ${APPDATA:-/mnt/user/appdata/family-hub}/data:/app/data         # sessions (and SQLite in dev)
       - ${APPDATA:-/mnt/user/appdata/family-hub}/uploads:/app/uploads   # media
       - ${APPDATA:-/mnt/user/appdata/family-hub}/config:/app/config     # services.yaml
     networks:
@@ -43,24 +51,24 @@ services:
 
       # Public site: feed, posts, media, EmDash API. No auth middleware.
       traefik.http.routers.family-hub.rule: Host(`${SITE_HOST}`)
-      traefik.http.routers.family-hub.entrypoints: ${TRAEFIK_ENTRYPOINT:-websecure}
-      traefik.http.routers.family-hub.tls.certresolver: ${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      traefik.http.routers.family-hub.entrypoints: ${TRAEFIK_ENTRYPOINT:-https}
+      traefik.http.routers.family-hub.tls.certresolver: ${TRAEFIK_CERTRESOLVER:-cloudflare}
       traefik.http.routers.family-hub.service: family-hub
 
       # /login runs through Authelia, then the app redirects back to /
       traefik.http.routers.family-hub-login.rule: Host(`${SITE_HOST}`) && Path(`/login`)
       traefik.http.routers.family-hub-login.priority: "100"
-      traefik.http.routers.family-hub-login.entrypoints: ${TRAEFIK_ENTRYPOINT:-websecure}
-      traefik.http.routers.family-hub-login.tls.certresolver: ${TRAEFIK_CERTRESOLVER:-letsencrypt}
-      traefik.http.routers.family-hub-login.middlewares: ${AUTHELIA_MIDDLEWARE:-authelia@docker}
+      traefik.http.routers.family-hub-login.entrypoints: ${TRAEFIK_ENTRYPOINT:-https}
+      traefik.http.routers.family-hub-login.tls.certresolver: ${TRAEFIK_CERTRESOLVER:-cloudflare}
+      traefik.http.routers.family-hub-login.middlewares: ${AUTHELIA_MIDDLEWARE:-default-secure@file}
       traefik.http.routers.family-hub-login.service: family-hub
 
-      # Extra Authelia layer (admins, 2FA) in front of the EmDash editor UI
+      # Extra Authelia layer (manage-social, 2FA) in front of the EmDash editor UI
       traefik.http.routers.family-hub-admin.rule: Host(`${SITE_HOST}`) && PathPrefix(`/_emdash/admin`)
       traefik.http.routers.family-hub-admin.priority: "100"
-      traefik.http.routers.family-hub-admin.entrypoints: ${TRAEFIK_ENTRYPOINT:-websecure}
-      traefik.http.routers.family-hub-admin.tls.certresolver: ${TRAEFIK_CERTRESOLVER:-letsencrypt}
-      traefik.http.routers.family-hub-admin.middlewares: ${AUTHELIA_MIDDLEWARE:-authelia@docker}
+      traefik.http.routers.family-hub-admin.entrypoints: ${TRAEFIK_ENTRYPOINT:-https}
+      traefik.http.routers.family-hub-admin.tls.certresolver: ${TRAEFIK_CERTRESOLVER:-cloudflare}
+      traefik.http.routers.family-hub-admin.middlewares: ${AUTHELIA_MIDDLEWARE:-default-secure@file}
       traefik.http.routers.family-hub-admin.service: family-hub
 
       # ---------------- Homepage ----------------

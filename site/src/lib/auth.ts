@@ -68,6 +68,6 @@ export async function getFamilyUser(request: Request): Promise<FamilyUser | null
 }
 
 export function logoutUrl(): string {
-	const authUrl = env("AUTHELIA_PUBLIC_URL", "https://auth.example.com");
+	const authUrl = env("AUTHELIA_PUBLIC_URL", "https://authelia.example.com");
 	return `${authUrl}/logout?rd=${encodeURIComponent(SITE_URL.origin + "/")}`;
 }

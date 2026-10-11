@@ -47,6 +47,11 @@
           "label": "Full post",
           "type": "portableText",
           "searchable": true
+        },
+        {
+          "slug": "members_only",
+          "label": "Family only (hide from the public)",
+          "type": "boolean"
         }
       ]
     },

@@ -4,6 +4,7 @@ import { Image, PortableText } from "emdash/ui";
 import { Comments, CommentForm } from "emdash/ui/comments";
 import Base from "../../layouts/Base.astro";
 import { getFamilyUser } from "../../lib/auth";
+import { isMembersOnly } from "../../lib/visibility";
 
 const slug = decodeSlug(Astro.params.slug);
 if (!slug) return Astro.rewrite("/404");
@@ -13,6 +14,11 @@ if (!post) return Astro.rewrite("/404");
 
 Astro.response.headers.set("Cache-Control", "private, no-store");
 
+// Family-only post and nobody signed in: say so, without leaking the title.
+const locked = isMembersOnly(post) && !user;
+if (locked) Astro.response.status = 403;
+const loginHref = `/login?next=${encodeURIComponent(Astro.url.pathname)}`;
+
 const published = post.data.publishedAt ?? post.data.createdAt;
 const dateLabel = published
 	? new Intl.DateTimeFormat("en-US", { dateStyle: "long" }).format(new Date(published))
@@ -20,38 +26,70 @@ const dateLabel = published
 const author = post.data.bylines?.[0]?.byline?.displayName ?? "The Bridgewaters";
 ---
 
-<Base title={post.data.title} description={post.data.excerpt} user={user}>
-	<a href="/" class="back">← Back to the feed</a>
+{
+	locked ? (
+		<Base title="Family only" user={user}>
+			<a href="/" class="back">← Back to the feed</a>
+			<section class="card locked">
+				<p class="locked__icon" aria-hidden="true">🔒</p>
+				<h1 class="locked__title">This post is just for family</h1>
+				<p class="locked__sub">Sign in with your family account to read it.</p>
+				<a href={loginHref} class="btn">Sign in</a>
+			</section>
+		</Base>
+	) : (
+		<Base title={post.data.title} description={post.data.excerpt} user={user}>
+			<a href="/" class="back">← Back to the feed</a>
 
-	<article class="article card">
-		{
-			post.data.featured_image && (
-				<div class="article__media">
-					<Image image={post.data.featured_image} sizes="(min-width: 640px) 608px, 100vw" priority />
+			<article class="article card">
+				{
+					post.data.featured_image && (
+						<div class="article__media">
+							<Image image={post.data.featured_image} sizes="(min-width: 640px) 608px, 100vw" priority />
+						</div>
+					)
+				}
+				<div class="article__body">
+					<p class="article__meta">{author} · {dateLabel}</p>
+					<h1 class="article__title">{post.data.title}</h1>
+					<div class="prose">
+						<PortableText value={post.data.content} />
+					</div>
 				</div>
-			)
-		}
-		<div class="article__body">
-			<p class="article__meta">{author} · {dateLabel}</p>
-			<h1 class="article__title">{post.data.title}</h1>
-			<div class="prose">
-				<PortableText value={post.data.content} />
-			</div>
-		</div>
-	</article>
+			</article>
 
-	<section id="comments" class="section">
-		<div class="section__head">
-			<h2 class="section__title">Comments</h2>
-		</div>
-		<div class="card comments">
-			<Comments collection="posts" contentId={post.data.id} threaded />
-			<CommentForm collection="posts" contentId={post.data.id} />
-		</div>
-	</section>
-</Base>
+			<section id="comments" class="section">
+				<div class="section__head">
+					<h2 class="section__title">Comments</h2>
+				</div>
+				<div class="card comments">
+					<Comments collection="posts" contentId={post.data.id} threaded />
+					<CommentForm collection="posts" contentId={post.data.id} />
+				</div>
+			</section>
+		</Base>
+	)
+}
 
 <style>
+	.locked {
+		margin-top: 8px;
+		padding: 28px 20px;
+		text-align: center;
+	}
+	.locked__icon {
+		margin: 0;
+		font-size: 2rem;
+	}
+	.locked__title {
+		font-family: var(--font-serif);
+		font-size: 1.5rem;
+		margin: 8px 0 0;
+	}
+	.locked__sub {
+		margin: 6px 0 18px;
+		color: var(--muted);
+	}
 	.back {
 		display: inline-flex;
 		align-items: center;

@@ -51,5 +51,5 @@ sections:
       - name: Write a post
         url: /_emdash/admin
         icon: ✍️
-        description: EmDash editor
-        groups: [manage-social]
+        description: Share news & photos
+        groups: [manage-social, family, extended-family]

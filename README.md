@@ -6,7 +6,8 @@
 |---|---|
 | Anyone | Family feed (EmDash posts, photos, comments) |
 | Signed in via Authelia | Greeting, **app tiles filtered by their Authelia groups**, family schedule, feed |
-| `manage-social` group | Above + "Write a post" → EmDash editor (`/_emdash/admin`, behind Authelia 2FA) |
+| `family` / `extended-family` | Above + "Write a post" → EmDash editor as author / contributor (drafts) |
+| `manage-social` group | Editor as admin (Authelia 2FA) |
 
 ## How sign-in works
 
@@ -38,7 +39,8 @@ forged header just gets the public view.
 5. Merge `authelia-access-control.yml` into Authelia's config and restart Authelia.
 6. `docker compose up -d`. If you use the Compose Manager plugin instead, set `BUILD_CONTEXT=/mnt/user/appdata/family-hub/site`
    in its env, because its project folder lives on the flash drive.
-7. Open `https://social.example.com/_emdash/admin` and finish EmDash setup (creates your passkey admin).
+7. Open `https://social.example.com/_emdash/admin`. Editor sign-in is Authelia (no EmDash passkeys); users are created
+   on first visit, matched by email, with roles from their lldap groups.
 
 ## Day-to-day
 

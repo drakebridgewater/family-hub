@@ -5,8 +5,9 @@ import PostCard from "../components/PostCard.astro";
 import ServiceGrid from "../components/ServiceGrid.astro";
 import Schedule from "../components/Schedule.astro";
 import { getFamilyUser } from "../lib/auth";
-import { servicesFor } from "../lib/services";
+import { servicesFor, withoutHidden } from "../lib/services";
 import { getSchedule, scheduleEnabled } from "../lib/calendar";
+import { DEFAULT_PREFS, getPrefs, TABS, type HomeTab } from "../lib/prefs";
 
 const PAGE_SIZE = 10;
 const user = await getFamilyUser(Astro.request);
@@ -15,11 +16,15 @@ const user = await getFamilyUser(Astro.request);
 const schedulePublic = (process.env.SCHEDULE_VISIBILITY ?? "members") === "public";
 const showSchedule = scheduleEnabled() && (schedulePublic || !!user);
 
-const [{ entries: posts }, sections, schedule] = await Promise.all([
+const [{ entries: posts }, sections, schedule, prefs] = await Promise.all([
 	getEmDashCollection("posts", { orderBy: { published_at: "desc" }, limit: PAGE_SIZE }),
 	user ? servicesFor(user) : Promise.resolve([]),
 	showSchedule ? getSchedule() : Promise.resolve([]),
+	user ? getPrefs(user.username) : Promise.resolve(DEFAULT_PREFS),
 ]);
+const visibleSections = withoutHidden(sections, prefs.hidden);
+const hiddenCount = sections.reduce((n, s) => n + s.services.length, 0) - visibleSections.reduce((n, s) => n + s.services.length, 0);
+const scheduleLabel = prefs.days === 1 ? "Today" : `Next ${prefs.days} days`;
 
 // The page differs per visitor, so never let a shared cache store it.
 Astro.response.headers.set("Cache-Control", user ? "private, no-store" : "public, max-age=0, must-revalidate");
@@ -35,23 +40,27 @@ const hour = Number(
 );
 const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
+// Phones show one panel at a time (?tab= from the tab bar, else the user's
+// start tab); desktop shows the feed with schedule and apps beside it.
 const tabs = user
 	? [
-			{ href: "#apps", label: "Apps", icon: "▦" },
-			...(showSchedule ? [{ href: "#schedule", label: "Schedule", icon: "◷" }] : []),
-			{ href: "#feed", label: "Feed", icon: "☰" },
+			{ id: "feed", label: "Feed", icon: "☰" },
+			...(showSchedule ? [{ id: "schedule", label: "Schedule", icon: "◷" }] : []),
+			{ id: "apps", label: "Apps", icon: "▦" },
 		]
 	: [];
+const requested = Astro.url.searchParams.get("tab") as HomeTab | null;
+const tabIds = tabs.map((t) => t.id);
+const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) && tabIds.includes(t)) ?? tabIds[0];
 ---
 
-<Base user={user} tabs={tabs}>
+<Base user={user} tabs={tabs} activeTab={activeTab} wide={!!user}>
 	{
 		user ? (
 			<section class="hello" aria-labelledby="hello-title">
 				<h1 id="hello-title" class="hello__title">
 					{greeting}, {firstName} 👋
 				</h1>
-				<p class="hello__sub">Here's everything you have access to.</p>
 			</section>
 		) : (
 			<section class="welcome card" aria-labelledby="welcome-title">
@@ -65,45 +74,51 @@ const tabs = user
 		)
 	}
 
-	{
-		user && (
-			<section id="apps" class="section" aria-labelledby="apps-title">
-				<div class="section__head">
-					<h2 id="apps-title" class="section__title">Your apps</h2>
-				</div>
-				<ServiceGrid sections={sections} />
-			</section>
-		)
-	}
+	<div class:list={["home", { "home--split": !!user }]}>
+		<section id="feed" class="section panel panel--feed" aria-labelledby="feed-title">
+			<div class="section__head">
+				<h2 id="feed-title" class="section__title">Family feed</h2>
+			</div>
+			{
+				posts.length === 0 ? (
+					<p class="card empty">No posts yet. Check back soon!</p>
+				) : (
+					<div class="feed">
+						{posts.map((post, i) => (
+							<PostCard post={post} priority={i === 0} />
+						))}
+					</div>
+				)
+			}
+		</section>
 
-	{
-		showSchedule && (
-			<section id="schedule" class="section" aria-labelledby="schedule-title">
-				<div class="section__head">
-					<h2 id="schedule-title" class="section__title">Coming up</h2>
-					<span class="section__meta">Next 7 days with plans</span>
-				</div>
-				<Schedule items={schedule} />
-			</section>
-		)
-	}
-
-	<section id="feed" class="section" aria-labelledby="feed-title">
-		<div class="section__head">
-			<h2 id="feed-title" class="section__title">Family feed</h2>
-		</div>
 		{
-			posts.length === 0 ? (
-				<p class="card empty">No posts yet. Check back soon!</p>
-			) : (
-				<div class="feed">
-					{posts.map((post, i) => (
-						<PostCard post={post} priority={i === 0} />
-					))}
-				</div>
+			user && (
+				<aside class="side" aria-label="Schedule and apps">
+					{showSchedule && (
+						<section id="schedule" class="section panel panel--schedule" aria-labelledby="schedule-title">
+							<div class="section__head">
+								<h2 id="schedule-title" class="section__title">Coming up</h2>
+								<a class="section__meta section__link" href="/settings#days">
+									{scheduleLabel}
+								</a>
+							</div>
+							<Schedule items={schedule} days={prefs.days} />
+						</section>
+					)}
+					<section id="apps" class="section panel panel--apps" aria-labelledby="apps-title">
+						<div class="section__head">
+							<h2 id="apps-title" class="section__title">Your apps</h2>
+							<a class="section__meta section__link" href="/settings#apps">
+								{hiddenCount ? `${hiddenCount} hidden · Edit` : "Edit"}
+							</a>
+						</div>
+						<ServiceGrid sections={visibleSections} />
+					</section>
+				</aside>
 			)
 		}
-	</section>
+	</div>
 </Base>
 
 <style>
@@ -141,6 +156,51 @@ const tabs = user
 	@media (min-width: 560px) {
 		.welcome .btn {
 			width: auto;
+		}
+	}
+	.section__link {
+		text-decoration: none;
+		white-space: nowrap;
+	}
+	.section__link:hover {
+		color: var(--accent);
+	}
+	/* Phones: one panel at a time, picked by the tab bar (body[data-tab]). */
+	@media (max-width: 899px) {
+		:global(body[data-tab="feed"]) .panel:not(.panel--feed),
+		:global(body[data-tab="schedule"]) .panel:not(.panel--schedule),
+		:global(body[data-tab="apps"]) .panel:not(.panel--apps) {
+			display: none;
+		}
+		.hello {
+			display: none;
+		}
+		:global(body[data-tab="feed"]) .hello {
+			display: block;
+		}
+		.home .section:first-child,
+		.side .section {
+			margin-top: 16px;
+		}
+	}
+	/* Desktop: feed on the left, schedule and apps beside it. */
+	@media (min-width: 900px) {
+		.home--split {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) 360px;
+			gap: 40px;
+			align-items: start;
+		}
+		.side {
+			position: sticky;
+			top: 76px;
+			max-height: calc(100vh - 92px);
+			overflow-y: auto;
+			overscroll-behavior: contain;
+			scrollbar-width: thin;
+		}
+		.side .section:first-child {
+			margin-top: 28px;
 		}
 	}
 	.feed {

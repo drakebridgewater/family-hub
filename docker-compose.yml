@@ -36,7 +36,7 @@ services:
       # --- Schedule ---
       CALENDAR_FEEDS: ${CALENDAR_FEEDS:-}
       SCHEDULE_VISIBILITY: ${SCHEDULE_VISIBILITY:-members}
-      CALENDAR_DAYS_AHEAD: ${CALENDAR_DAYS_AHEAD:-21}
+      CALENDAR_DAYS_AHEAD: ${CALENDAR_DAYS_AHEAD:-31}
     volumes:
       - ${APPDATA:-/mnt/user/appdata/family-hub}/data:/app/data         # sessions (and SQLite in dev)
       - ${APPDATA:-/mnt/user/appdata/family-hub}/uploads:/app/uploads   # media

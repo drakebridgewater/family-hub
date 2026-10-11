@@ -9,6 +9,7 @@ import { servicesFor, withoutHidden } from "../lib/services";
 import { getSchedule, scheduleEnabled } from "../lib/calendar";
 import { DEFAULT_PREFS, getPrefs, TABS, type HomeTab } from "../lib/prefs";
 import { isMembersOnly } from "../lib/visibility";
+import { canPost, NEW_POST_URL } from "../lib/editor-roles";
 
 const PAGE_SIZE = 10;
 const user = await getFamilyUser(Astro.request);
@@ -27,6 +28,7 @@ const [{ entries: recent }, sections, schedule, prefs] = await Promise.all([
 const posts = (user ? recent : recent.filter((post) => !isMembersOnly(post))).slice(0, PAGE_SIZE);
 const visibleSections = withoutHidden(sections, prefs.hidden);
 const hiddenCount = sections.reduce((n, s) => n + s.services.length, 0) - visibleSections.reduce((n, s) => n + s.services.length, 0);
+const showNewPost = !!user && canPost(user.groups);
 const scheduleLabel = prefs.days === 1 ? "Today" : `Next ${prefs.days} days`;
 
 // The page differs per visitor, so never let a shared cache store it.
@@ -81,10 +83,21 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 		<section id="feed" class="section panel panel--feed" aria-labelledby="feed-title">
 			<div class="section__head">
 				<h2 id="feed-title" class="section__title">Family feed</h2>
+				{showNewPost && (
+					<a href={NEW_POST_URL} class="btn newpost">
+						<span aria-hidden="true">✍️</span> New post
+					</a>
+				)}
 			</div>
 			{
 				posts.length === 0 ? (
-					<p class="card empty">No posts yet. Check back soon!</p>
+					<p class="card empty">
+						{showNewPost ? (
+							<>No posts yet. <a href={NEW_POST_URL}>Write the first one!</a></>
+						) : (
+							"No posts yet. Check back soon!"
+						)}
+					</p>
 				) : (
 					<div class="feed">
 						{posts.map((post, i) => (
@@ -185,6 +198,13 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 		.welcome .btn {
 			width: auto;
 		}
+	}
+	.newpost {
+		min-height: 36px;
+		padding: 0 14px;
+		font-size: 0.875rem;
+		gap: 6px;
+		flex-shrink: 0;
 	}
 	.apps-tools {
 		display: inline-flex;

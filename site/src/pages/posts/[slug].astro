@@ -44,14 +44,14 @@ const author = post.data.bylines?.[0]?.byline?.displayName ?? "The Bridgewaters"
 			<article class="article card">
 				{
 					post.data.featured_image && (
-						<div class="article__media">
+						<div class="article__media" {...post.edit.featured_image}>
 							<Image image={post.data.featured_image} sizes="(min-width: 640px) 608px, 100vw" priority />
 						</div>
 					)
 				}
 				<div class="article__body">
 					<p class="article__meta">{author} · {dateLabel}</p>
-					<h1 class="article__title">{post.data.title}</h1>
+					<h1 class="article__title" {...post.edit.title}>{post.data.title}</h1>
 					<div class="prose">
 						<PortableText value={post.data.content} />
 					</div>

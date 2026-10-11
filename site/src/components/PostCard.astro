@@ -39,13 +39,13 @@ const initials = author
 	</header>
 
 	<a href={href} class="post__link">
-		<h2 class="post__title">{post.data.title}</h2>
-		{post.data.excerpt && <p class="post__excerpt">{post.data.excerpt}</p>}
+		<h2 class="post__title" {...post.edit.title}>{post.data.title}</h2>
+		{post.data.excerpt && <p class="post__excerpt" {...post.edit.excerpt}>{post.data.excerpt}</p>}
 	</a>
 
 	{
 		post.data.featured_image && (
-			<a href={href} class="post__media" tabindex="-1" aria-hidden="true">
+			<a href={href} class="post__media" tabindex="-1" aria-hidden="true" {...post.edit.featured_image}>
 				<Image image={post.data.featured_image} sizes="(min-width: 640px) 608px, 100vw" priority={priority} />
 			</a>
 		)

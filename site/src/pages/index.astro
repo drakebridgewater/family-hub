@@ -1,0 +1,155 @@
+---
+import { getEmDashCollection } from "emdash";
+import Base from "../layouts/Base.astro";
+import PostCard from "../components/PostCard.astro";
+import ServiceGrid from "../components/ServiceGrid.astro";
+import Schedule from "../components/Schedule.astro";
+import { getFamilyUser } from "../lib/auth";
+import { servicesFor } from "../lib/services";
+import { getSchedule, scheduleEnabled } from "../lib/calendar";
+
+const PAGE_SIZE = 10;
+const user = await getFamilyUser(Astro.request);
+
+// "members" (default) keeps the family's whereabouts off the public internet.
+const schedulePublic = (process.env.SCHEDULE_VISIBILITY ?? "members") === "public";
+const showSchedule = scheduleEnabled() && (schedulePublic || !!user);
+
+const [{ entries: posts }, sections, schedule] = await Promise.all([
+	getEmDashCollection("posts", { orderBy: { published_at: "desc" }, limit: PAGE_SIZE }),
+	user ? servicesFor(user) : Promise.resolve([]),
+	showSchedule ? getSchedule() : Promise.resolve([]),
+]);
+
+// The page differs per visitor, so never let a shared cache store it.
+Astro.response.headers.set("Cache-Control", user ? "private, no-store" : "public, max-age=0, must-revalidate");
+Astro.response.headers.set("Vary", "Cookie");
+
+const firstName = user?.name.split(" ")[0];
+const hour = Number(
+	new Intl.DateTimeFormat("en-US", {
+		hour: "numeric",
+		hourCycle: "h23",
+		timeZone: process.env.SITE_TIMEZONE || process.env.TZ || "America/Chicago",
+	}).format(new Date()),
+);
+const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+
+const tabs = user
+	? [
+			{ href: "#apps", label: "Apps", icon: "▦" },
+			...(showSchedule ? [{ href: "#schedule", label: "Schedule", icon: "◷" }] : []),
+			{ href: "#feed", label: "Feed", icon: "☰" },
+		]
+	: [];
+---
+
+<Base user={user} tabs={tabs}>
+	{
+		user ? (
+			<section class="hello" aria-labelledby="hello-title">
+				<h1 id="hello-title" class="hello__title">
+					{greeting}, {firstName} 👋
+				</h1>
+				<p class="hello__sub">Here's everything you have access to.</p>
+			</section>
+		) : (
+			<section class="welcome card" aria-labelledby="welcome-title">
+				<h1 id="welcome-title" class="welcome__title">Welcome, friends &amp; family</h1>
+				<p class="welcome__sub">
+					Catch up on what we've been up to below. Family members can sign in to see our schedule and the
+					shared apps.
+				</p>
+				<a href="/login" class="btn">Sign in with your family account</a>
+			</section>
+		)
+	}
+
+	{
+		user && (
+			<section id="apps" class="section" aria-labelledby="apps-title">
+				<div class="section__head">
+					<h2 id="apps-title" class="section__title">Your apps</h2>
+				</div>
+				<ServiceGrid sections={sections} />
+			</section>
+		)
+	}
+
+	{
+		showSchedule && (
+			<section id="schedule" class="section" aria-labelledby="schedule-title">
+				<div class="section__head">
+					<h2 id="schedule-title" class="section__title">Coming up</h2>
+					<span class="section__meta">Next 7 days with plans</span>
+				</div>
+				<Schedule items={schedule} />
+			</section>
+		)
+	}
+
+	<section id="feed" class="section" aria-labelledby="feed-title">
+		<div class="section__head">
+			<h2 id="feed-title" class="section__title">Family feed</h2>
+		</div>
+		{
+			posts.length === 0 ? (
+				<p class="card empty">No posts yet. Check back soon!</p>
+			) : (
+				<div class="feed">
+					{posts.map((post, i) => (
+						<PostCard post={post} priority={i === 0} />
+					))}
+				</div>
+			)
+		}
+	</section>
+</Base>
+
+<style>
+	.hello {
+		padding-top: 12px;
+	}
+	.hello__title {
+		font-family: var(--font-serif);
+		font-size: clamp(1.6rem, 6vw, 2.1rem);
+		line-height: 1.15;
+		margin: 0;
+	}
+	.hello__sub {
+		margin: 4px 0 0;
+		color: var(--muted);
+	}
+	.welcome {
+		margin-top: 12px;
+		padding: 22px 20px;
+		background: linear-gradient(160deg, var(--accent-soft), var(--surface) 70%);
+	}
+	.welcome__title {
+		font-family: var(--font-serif);
+		font-size: clamp(1.5rem, 6vw, 2rem);
+		line-height: 1.15;
+		margin: 0;
+	}
+	.welcome__sub {
+		margin: 8px 0 16px;
+		color: var(--muted);
+	}
+	.welcome .btn {
+		width: 100%;
+	}
+	@media (min-width: 560px) {
+		.welcome .btn {
+			width: auto;
+		}
+	}
+	.feed {
+		display: grid;
+		gap: 16px;
+	}
+	.empty {
+		padding: 16px;
+		margin: 0;
+		color: var(--muted);
+	}
+</style>

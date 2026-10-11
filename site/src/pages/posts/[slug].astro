@@ -1,0 +1,104 @@
+---
+import { getEmDashEntry, decodeSlug } from "emdash";
+import { Image, PortableText } from "emdash/ui";
+import { Comments, CommentForm } from "emdash/ui/comments";
+import Base from "../../layouts/Base.astro";
+import { getFamilyUser } from "../../lib/auth";
+
+const slug = decodeSlug(Astro.params.slug);
+if (!slug) return Astro.rewrite("/404");
+
+const [{ entry: post }, user] = await Promise.all([getEmDashEntry("posts", slug), getFamilyUser(Astro.request)]);
+if (!post) return Astro.rewrite("/404");
+
+Astro.response.headers.set("Cache-Control", "private, no-store");
+
+const published = post.data.publishedAt ?? post.data.createdAt;
+const dateLabel = published
+	? new Intl.DateTimeFormat("en-US", { dateStyle: "long" }).format(new Date(published))
+	: "";
+const author = post.data.bylines?.[0]?.byline?.displayName ?? "The Bridgewaters";
+---
+
+<Base title={post.data.title} description={post.data.excerpt} user={user}>
+	<a href="/" class="back">← Back to the feed</a>
+
+	<article class="article card">
+		{
+			post.data.featured_image && (
+				<div class="article__media">
+					<Image image={post.data.featured_image} sizes="(min-width: 640px) 608px, 100vw" priority />
+				</div>
+			)
+		}
+		<div class="article__body">
+			<p class="article__meta">{author} · {dateLabel}</p>
+			<h1 class="article__title">{post.data.title}</h1>
+			<div class="prose">
+				<PortableText value={post.data.content} />
+			</div>
+		</div>
+	</article>
+
+	<section id="comments" class="section">
+		<div class="section__head">
+			<h2 class="section__title">Comments</h2>
+		</div>
+		<div class="card comments">
+			<Comments collection="posts" contentId={post.data.id} threaded />
+			<CommentForm collection="posts" contentId={post.data.id} />
+		</div>
+	</section>
+</Base>
+
+<style>
+	.back {
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		color: var(--muted);
+		text-decoration: none;
+		font-weight: 600;
+		font-size: 0.9rem;
+	}
+	.article {
+		overflow: hidden;
+	}
+	.article__media :global(img) {
+		width: 100%;
+	}
+	.article__body {
+		padding: 18px 18px 22px;
+	}
+	.article__meta {
+		margin: 0;
+		color: var(--muted);
+		font-size: 0.85rem;
+	}
+	.article__title {
+		font-family: var(--font-serif);
+		font-size: clamp(1.6rem, 7vw, 2.2rem);
+		line-height: 1.15;
+		margin: 6px 0 14px;
+	}
+	.prose {
+		font-size: 1.05rem;
+		line-height: 1.65;
+	}
+	.prose :global(img) {
+		border-radius: var(--radius-sm);
+		margin: 1em 0;
+	}
+	.prose :global(a) {
+		color: var(--accent);
+	}
+	.comments {
+		padding: 16px;
+	}
+	.comments :global(input),
+	.comments :global(textarea) {
+		width: 100%;
+		font: inherit;
+		font-size: 16px; /* prevents iOS zoom-on-focus */
+	}
+</style>

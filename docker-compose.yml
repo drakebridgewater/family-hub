@@ -1,0 +1,82 @@
+# Bridgewater Family Hub: EmDash CMS + family landing page
+# https://social.example.com
+#
+# Public visitors see the family feed. Anyone signed in to Authelia also sees
+# the schedule and the app tiles their Authelia groups allow.
+
+name: family-hub
+
+services:
+  family-hub:
+    container_name: family-hub
+    image: family-hub:latest
+    build:
+      # EmDash has no official image. This builds the Astro/EmDash site in ./site.
+      context: ${BUILD_CONTEXT:-./site}
+    restart: unless-stopped
+    user: "${PUID:-99}:${PGID:-100}"   # Unraid nobody:users
+    environment:
+      TZ: ${TZ:-America/Chicago}
+      SITE_TIMEZONE: ${TZ:-America/Chicago}
+      # --- EmDash ---
+      EMDASH_SITE_URL: https://${SITE_HOST}   # passkeys are bound to this exact host
+      EMDASH_ENCRYPTION_KEY: ${EMDASH_ENCRYPTION_KEY}
+      # --- Authelia (soft session check, see site/src/lib/auth.ts) ---
+      AUTHELIA_INTERNAL_URL: ${AUTHELIA_INTERNAL_URL:-http://authelia:9091}
+      AUTHELIA_PUBLIC_URL: ${AUTHELIA_PUBLIC_URL}
+      AUTHELIA_SESSION_COOKIE: ${AUTHELIA_SESSION_COOKIE:-authelia_session}
+      # --- Schedule ---
+      CALENDAR_FEEDS: ${CALENDAR_FEEDS:-}
+      SCHEDULE_VISIBILITY: ${SCHEDULE_VISIBILITY:-members}
+      CALENDAR_DAYS_AHEAD: ${CALENDAR_DAYS_AHEAD:-21}
+    volumes:
+      - ${APPDATA:-/mnt/user/appdata/family-hub}/data:/app/data         # SQLite DB
+      - ${APPDATA:-/mnt/user/appdata/family-hub}/uploads:/app/uploads   # media
+      - ${APPDATA:-/mnt/user/appdata/family-hub}/config:/app/config     # services.yaml
+    networks:
+      - proxy
+    labels:
+      # ---------------- Traefik ----------------
+      traefik.enable: "true"
+      traefik.docker.network: ${TRAEFIK_NETWORK:-proxy}
+      traefik.http.services.family-hub.loadbalancer.server.port: "4321"
+
+      # Public site: feed, posts, media, EmDash API. No auth middleware.
+      traefik.http.routers.family-hub.rule: Host(`${SITE_HOST}`)
+      traefik.http.routers.family-hub.entrypoints: ${TRAEFIK_ENTRYPOINT:-websecure}
+      traefik.http.routers.family-hub.tls.certresolver: ${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      traefik.http.routers.family-hub.service: family-hub
+
+      # /login runs through Authelia, then the app redirects back to /
+      traefik.http.routers.family-hub-login.rule: Host(`${SITE_HOST}`) && Path(`/login`)
+      traefik.http.routers.family-hub-login.priority: "100"
+      traefik.http.routers.family-hub-login.entrypoints: ${TRAEFIK_ENTRYPOINT:-websecure}
+      traefik.http.routers.family-hub-login.tls.certresolver: ${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      traefik.http.routers.family-hub-login.middlewares: ${AUTHELIA_MIDDLEWARE:-authelia@docker}
+      traefik.http.routers.family-hub-login.service: family-hub
+
+      # Extra Authelia layer (admins, 2FA) in front of the EmDash editor UI
+      traefik.http.routers.family-hub-admin.rule: Host(`${SITE_HOST}`) && PathPrefix(`/_emdash/admin`)
+      traefik.http.routers.family-hub-admin.priority: "100"
+      traefik.http.routers.family-hub-admin.entrypoints: ${TRAEFIK_ENTRYPOINT:-websecure}
+      traefik.http.routers.family-hub-admin.tls.certresolver: ${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      traefik.http.routers.family-hub-admin.middlewares: ${AUTHELIA_MIDDLEWARE:-authelia@docker}
+      traefik.http.routers.family-hub-admin.service: family-hub
+
+      # ---------------- Homepage ----------------
+      homepage.group: ${HOMEPAGE_GROUP:-Family}
+      homepage.name: Family Hub
+      homepage.icon: mdi-home-heart
+      homepage.href: https://${SITE_HOST}
+      homepage.description: EmDash CMS · family feed & launcher
+      homepage.siteMonitor: http://family-hub:4321
+
+      # ---------------- Unraid UI ----------------
+      net.unraid.docker.managed: composeman
+      net.unraid.docker.webui: https://${SITE_HOST}/_emdash/admin
+      net.unraid.docker.icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/astro.png
+
+networks:
+  proxy:
+    name: ${TRAEFIK_NETWORK:-proxy}
+    external: true

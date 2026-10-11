@@ -8,11 +8,18 @@ interface Props {
 	title?: string;
 	description?: string;
 	user?: FamilyUser | null;
-	/** Show the bottom tab bar (home page only). */
-	tabs?: Array<{ href: string; label: string; icon: string }>;
+	/**
+	 * Bottom tab bar (home page only). On phones each tab shows one panel of
+	 * the page; on desktop everything is visible and the bar is hidden.
+	 */
+	tabs?: Array<{ id: string; label: string; icon: string }>;
+	/** Tab shown first on phones. */
+	activeTab?: string;
+	/** Wider frame for the two-column desktop home page. */
+	wide?: boolean;
 }
 
-const { title, description, user = null, tabs = [] } = Astro.props;
+const { title, description, user = null, tabs = [], activeTab, wide = false } = Astro.props;
 const settings = await getSiteSettings();
 const siteTitle = settings?.title || "The Bridgewaters";
 const tagline = settings?.tagline || "";
@@ -39,7 +46,7 @@ const initials = (user?.name ?? "")
 		<link rel="apple-touch-icon" href="/favicon.svg" />
 		<title>{pageTitle}</title>
 	</head>
-	<body class:list={{ "has-tabs": tabs.length > 0 }}>
+	<body class:list={{ "has-tabs": tabs.length > 0, wide }} data-tab={tabs.length ? activeTab ?? tabs[0].id : undefined}>
 		<header class="topbar">
 			<div class="frame topbar__inner">
 				<a href="/" class="brand">
@@ -57,6 +64,7 @@ const initials = (user?.name ?? "")
 									<strong>{user.name}</strong>
 									<span>{user.email || user.username}</span>
 								</p>
+								<a href="/settings" class="btn btn--ghost">Customize home</a>
 								<a href={logoutUrl()} class="btn btn--ghost">Sign out</a>
 							</div>
 						</details>
@@ -79,12 +87,37 @@ const initials = (user?.name ?? "")
 			tabs.length > 0 && (
 				<nav class="tabbar" aria-label="Sections">
 					{tabs.map((t) => (
-						<a href={t.href} class="tabbar__item">
+						<a
+							href={`/?tab=${t.id}`}
+							class="tabbar__item"
+							data-tab-link={t.id}
+							aria-current={(activeTab ?? tabs[0].id) === t.id ? "page" : undefined}
+						>
 							<span class="tabbar__icon" aria-hidden="true">{t.icon}</span>
 							<span>{t.label}</span>
 						</a>
 					))}
 				</nav>
+			)
+		}
+		{
+			tabs.length > 0 && (
+				<script>
+					// Switch panels in place instead of reloading (the links still work without JS).
+					for (const link of document.querySelectorAll<HTMLAnchorElement>("[data-tab-link]")) {
+						link.addEventListener("click", (event) => {
+							const tab = link.dataset.tabLink!;
+							event.preventDefault();
+							document.body.dataset.tab = tab;
+							for (const other of document.querySelectorAll("[data-tab-link]")) {
+								other.toggleAttribute("aria-current", other === link);
+								if (other === link) other.setAttribute("aria-current", "page");
+							}
+							history.replaceState(null, "", `/?tab=${tab}`);
+							window.scrollTo({ top: 0 });
+						});
+					}
+				</script>
 			)
 		}
 	</body>
@@ -170,6 +203,9 @@ const initials = (user?.name ?? "")
 		color: var(--muted);
 		overflow-wrap: anywhere;
 	}
+	.wide {
+		--max: 1120px;
+	}
 	.main {
 		padding-top: 8px;
 		padding-bottom: 32px;
@@ -206,6 +242,9 @@ const initials = (user?.name ?? "")
 		font-weight: 600;
 		color: var(--muted);
 		text-decoration: none;
+	}
+	.tabbar__item[aria-current="page"] {
+		color: var(--accent);
 	}
 	.tabbar__icon {
 		font-size: 1.3rem;

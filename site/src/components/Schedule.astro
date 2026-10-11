@@ -4,16 +4,16 @@ import { groupByDay } from "../lib/calendar";
 
 interface Props {
 	items: ScheduleItem[];
-	/** Max number of days to show. */
+	/** Calendar days to show, starting today. */
 	days?: number;
 }
 const { items, days = 7 } = Astro.props;
-const grouped = groupByDay(items).slice(0, days);
+const grouped = groupByDay(items, days);
 ---
 
 {
 	grouped.length === 0 ? (
-		<p class="empty card">Nothing on the calendar right now. 🌤️</p>
+		<p class="empty card">Nothing on the calendar {days === 1 ? "today" : `in the next ${days} days`}. 🌤️</p>
 	) : (
 		<ol class="days" role="list">
 			{grouped.map((day) => (

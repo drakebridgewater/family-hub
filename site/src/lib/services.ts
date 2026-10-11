@@ -58,6 +58,15 @@ export async function servicesFor(user: FamilyUser): Promise<ServiceSection[]> {
 		.filter((section) => section.services.length > 0);
 }
 
+/** Drops services the user hid on /settings (keyed by URL), then empty sections. */
+export function withoutHidden(sections: ServiceSection[], hidden: string[]): ServiceSection[] {
+	if (!hidden.length) return sections;
+	const hide = new Set(hidden);
+	return sections
+		.map((section) => ({ ...section, services: section.services.filter((svc) => !hide.has(svc.url)) }))
+		.filter((section) => section.services.length > 0);
+}
+
 /**
  * Icon shorthand, matching Homepage conventions:
  *   "plex"            -> dashboard-icons CDN (png)

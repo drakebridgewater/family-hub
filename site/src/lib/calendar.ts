@@ -18,7 +18,8 @@ export interface ScheduleItem {
 }
 
 const PALETTE = ["#e76f51", "#2a9d8f", "#7b61ff", "#e9a23b", "#3a86ff", "#d6336c"];
-const DAYS_AHEAD = Number(process.env.CALENDAR_DAYS_AHEAD ?? 21);
+// How far ahead feeds are fetched; each user picks how much of it to show.
+const DAYS_AHEAD = Number(process.env.CALENDAR_DAYS_AHEAD ?? 31);
 const CACHE_MS = Number(process.env.CALENDAR_CACHE_MINUTES ?? 10) * 60_000;
 
 let cache: { at: number; items: ScheduleItem[] } | null = null;
@@ -84,25 +85,29 @@ export async function getSchedule(): Promise<ScheduleItem[]> {
 	return cache.items;
 }
 
-/** Groups items by local calendar day (in SITE_TIMEZONE). */
-export function groupByDay(items: ScheduleItem[]) {
+/** Upper bound for a user's "days to show" choice. */
+export const maxScheduleDays = () => DAYS_AHEAD;
+
+/** Groups items by local calendar day (in SITE_TIMEZONE), for `days` days starting today. */
+export function groupByDay(items: ScheduleItem[], days = DAYS_AHEAD) {
 	const tz = process.env.SITE_TIMEZONE || process.env.TZ || "America/Chicago";
 	const dayKey = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" });
 	const todayKey = dayKey.format(new Date());
 	const tomorrowKey = dayKey.format(new Date(Date.now() + 86_400_000));
+	const endKey = dayKey.format(new Date(Date.now() + days * 86_400_000));
 	const label = new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "long", month: "short", day: "numeric" });
 	const time = new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", minute: "2-digit" });
 
-	const days = new Map<string, { label: string; items: Array<ScheduleItem & { time: string }> }>();
+	const byDay = new Map<string, { label: string; items: Array<ScheduleItem & { time: string }> }>();
 	for (const item of items) {
 		// All-day events are date-only; format them in UTC so they don't slip a day.
 		const key = item.allDay ? item.start.toISOString().slice(0, 10) : dayKey.format(item.start);
-		if (key < todayKey) continue;
-		if (!days.has(key)) {
+		if (key < todayKey || key >= endKey) continue;
+		if (!byDay.has(key)) {
 			const pretty = key === todayKey ? "Today" : key === tomorrowKey ? "Tomorrow" : label.format(new Date(`${key}T12:00:00Z`));
-			days.set(key, { label: pretty, items: [] });
+			byDay.set(key, { label: pretty, items: [] });
 		}
-		days.get(key)!.items.push({ ...item, time: item.allDay ? "All day" : time.format(item.start) });
+		byDay.get(key)!.items.push({ ...item, time: item.allDay ? "All day" : time.format(item.start) });
 	}
-	return [...days.values()];
+	return [...byDay.values()];
 }

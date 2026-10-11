@@ -54,6 +54,15 @@ forged header just gets the public view.
   Tiles only *hide* links; each service still needs its own Authelia rule.
 - **Schedule:** set `CALENDAR_FEEDS="Family|https://…ics,Kids|https://…ics"` (Google Calendar → *Secret address in iCal format*).
 
+## What the site shows from EmDash
+
+- **Menu:** the menu named `primary` (Menus in the admin) is the header navigation; a "Menu" button on phones.
+- **Pages:** published pages at `/pages/<slug>`. Link them from the menu. Drafts don't show.
+- **Categories & tags:** chips on posts, with listings at `/category/<slug>` and `/tag/<slug>`.
+- **Widgets:** a widget area named `sidebar` shows in the desktop sidebar (under the feed on phones).
+  Categories, Tags, Archives, Recent posts and Menu widgets work; Search needs SQLite, so skip it on Postgres.
+- **Site settings:** title, tagline, logo and favicon. SEO and plugin head tags come from `<EmDashHead>`.
+
 ## Develop locally
 
 ```bash

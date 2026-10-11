@@ -144,6 +144,74 @@ a {
 	white-space: nowrap;
 }
 
+/* Article layout shared by posts, pages and archive pages. */
+.back {
+	display: inline-flex;
+	align-items: center;
+	min-height: 44px;
+	color: var(--muted);
+	text-decoration: none;
+	font-weight: 600;
+	font-size: 0.9rem;
+}
+.article {
+	overflow: hidden;
+}
+.article__media img {
+	width: 100%;
+}
+.article__body {
+	padding: 18px 18px 22px;
+}
+.article__meta {
+	margin: 0;
+	color: var(--muted);
+	font-size: 0.85rem;
+}
+.article__title {
+	font-family: var(--font-serif);
+	font-size: clamp(1.6rem, 7vw, 2.2rem);
+	line-height: 1.15;
+	margin: 6px 0 14px;
+}
+.prose {
+	font-size: 1.05rem;
+	line-height: 1.65;
+}
+.prose img {
+	border-radius: var(--radius-sm);
+	margin: 1em 0;
+}
+.prose a {
+	color: var(--accent);
+}
+
+.chips-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.term {
+	display: inline-flex;
+	align-items: center;
+	min-height: 26px;
+	padding: 0 10px;
+	border-radius: 999px;
+	background: var(--surface-2);
+	color: var(--muted);
+	font-size: 0.78rem;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.term:hover {
+	color: var(--accent);
+}
+
 @media (prefers-reduced-motion: reduce) {
 	html {
 		scroll-behavior: auto;

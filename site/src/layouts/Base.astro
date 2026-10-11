@@ -1,5 +1,7 @@
 ---
-import { getSiteSettings } from "emdash";
+import { getMenu, getSiteSettings } from "emdash";
+import { createPublicPageContext } from "emdash/page";
+import { EmDashBodyEnd, EmDashBodyStart, EmDashHead, Image } from "emdash/ui";
 import type { FamilyUser } from "../lib/auth";
 import { logoutUrl } from "../lib/auth";
 import "../styles/global.css";
@@ -17,13 +19,23 @@ interface Props {
 	activeTab?: string;
 	/** Wider frame for the two-column desktop home page. */
 	wide?: boolean;
+	/**
+	 * EmDash page context (SEO tags, plugin contributions). Content pages pass
+	 * one built from their entry; everything else gets a plain one.
+	 */
+	page?: Parameters<typeof EmDashHead>[0]["page"];
 }
 
 const { title, description, user = null, tabs = [], activeTab, wide = false } = Astro.props;
-const settings = await getSiteSettings();
+const [settings, menu] = await Promise.all([getSiteSettings(), getMenu("primary")]);
+const menuItems = menu?.items ?? [];
 const siteTitle = settings?.title || "The Bridgewaters";
 const tagline = settings?.tagline || "";
 const pageTitle = title ? `${title} · ${siteTitle}` : siteTitle;
+const page =
+	Astro.props.page ??
+	createPublicPageContext({ Astro, kind: "custom", title: title ?? siteTitle, description: description ?? tagline, siteName: siteTitle });
+const isCurrent = (url: string) => url === Astro.url.pathname;
 
 const initials = (user?.name ?? "")
 	.split(/\s+/)
@@ -41,18 +53,88 @@ const initials = (user?.name ?? "")
 		<meta name="theme-color" content="#f6f3ee" media="(prefers-color-scheme: light)" />
 		<meta name="theme-color" content="#15130f" media="(prefers-color-scheme: dark)" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
-		<meta name="description" content={description ?? tagline} />
-		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+		{!settings?.favicon && <link rel="icon" href="/favicon.svg" type="image/svg+xml" />}
 		<link rel="apple-touch-icon" href="/favicon.svg" />
 		<title>{pageTitle}</title>
+		<EmDashHead page={page} />
 	</head>
 	<body class:list={{ "has-tabs": tabs.length > 0, wide }} data-tab={tabs.length ? activeTab ?? tabs[0].id : undefined}>
+		<EmDashBodyStart page={page} />
 		<header class="topbar">
 			<div class="frame topbar__inner">
 				<a href="/" class="brand">
-					<span class="brand__mark" aria-hidden="true">❦</span>
+					{
+						settings?.logo ? (
+							<span class="brand__logo">
+								<Image image={settings.logo} alt="" width={32} height={32} />
+							</span>
+						) : (
+							<span class="brand__mark" aria-hidden="true">❦</span>
+						)
+					}
 					<span class="brand__name">{siteTitle}</span>
 				</a>
+				{
+					menuItems.length > 0 && (
+						<nav class="menu" aria-label={menu?.label ?? "Site"}>
+							{/* Desktop: inline links. Phones: a "Menu" dropdown. */}
+							<ul class="menu__inline" role="list">
+								{menuItems.map((item) => (
+									<li>
+										{item.children.length ? (
+											<details class="menu__sub">
+												<summary>{item.label}</summary>
+												<ul class="card menu__panel" role="list">
+													{item.children.map((child) => (
+														<li>
+															<a href={child.url} target={child.target || undefined} rel={child.target === "_blank" ? "noopener" : undefined} title={child.titleAttr || undefined} class={child.cssClasses || undefined}>
+																{child.label}
+															</a>
+														</li>
+													))}
+												</ul>
+											</details>
+										) : (
+											<a
+												href={item.url}
+												target={item.target || undefined}
+												rel={item.target === "_blank" ? "noopener" : undefined}
+												title={item.titleAttr || undefined}
+												class={item.cssClasses || undefined}
+												aria-current={isCurrent(item.url) ? "page" : undefined}
+											>
+												{item.label}
+											</a>
+										)}
+									</li>
+								))}
+							</ul>
+							<details class="menu__drop">
+								<summary class="btn btn--ghost menu__button">Menu</summary>
+								<ul class="card menu__panel" role="list">
+									{menuItems.map((item) => (
+										<li>
+											<a href={item.url} target={item.target || undefined} rel={item.target === "_blank" ? "noopener" : undefined}>
+												{item.label}
+											</a>
+											{item.children.length > 0 && (
+												<ul role="list" class="menu__children">
+													{item.children.map((child) => (
+														<li>
+															<a href={child.url} target={child.target || undefined} rel={child.target === "_blank" ? "noopener" : undefined}>
+																{child.label}
+															</a>
+														</li>
+													))}
+												</ul>
+											)}
+										</li>
+									))}
+								</ul>
+							</details>
+						</nav>
+					)
+				}
 				{
 					user ? (
 						<details class="account">
@@ -120,6 +202,7 @@ const initials = (user?.name ?? "")
 				</script>
 			)
 		}
+		<EmDashBodyEnd page={page} />
 	</body>
 </html>
 
@@ -159,6 +242,98 @@ const initials = (user?.name ?? "")
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+	}
+	.brand__logo :global(img) {
+		width: 32px;
+		height: 32px;
+		object-fit: contain;
+		border-radius: 8px;
+	}
+	.menu {
+		margin-left: auto;
+		min-width: 0;
+	}
+	.menu ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.menu a,
+	.menu summary {
+		text-decoration: none;
+		font-weight: 600;
+		font-size: 0.9rem;
+		cursor: pointer;
+	}
+	.menu__inline {
+		display: none;
+	}
+	.menu__drop,
+	.menu__sub {
+		position: relative;
+	}
+	.menu__button {
+		list-style: none;
+		min-height: 38px;
+		padding: 0 14px;
+		font-size: 0.9rem;
+	}
+	.menu summary::-webkit-details-marker {
+		display: none;
+	}
+	.menu__panel {
+		position: absolute;
+		right: 0;
+		top: calc(100% + 8px);
+		z-index: 30;
+		min-width: 220px;
+		max-width: calc(100vw - 32px);
+		padding: 8px;
+		display: grid;
+	}
+	.menu__panel a {
+		display: block;
+		padding: 10px 12px;
+		border-radius: var(--radius-sm);
+	}
+	.menu__panel a:hover {
+		background: var(--surface-2);
+	}
+	.menu__children {
+		padding-left: 12px !important;
+	}
+	@media (min-width: 900px) {
+		.menu__drop {
+			display: none;
+		}
+		.menu__inline {
+			display: flex;
+			align-items: center;
+			gap: 4px;
+		}
+		.menu__inline > li > a,
+		.menu__sub > summary {
+			display: inline-flex;
+			align-items: center;
+			min-height: 38px;
+			padding: 0 12px;
+			border-radius: 999px;
+			color: var(--muted);
+		}
+		.menu__inline > li > a:hover,
+		.menu__sub > summary:hover,
+		.menu__inline a[aria-current="page"] {
+			color: var(--text);
+			background: var(--surface-2);
+		}
+		.menu__sub > summary::after {
+			content: " ▾";
+			font-size: 0.75em;
+		}
+		.menu__sub .menu__panel {
+			left: 0;
+			right: auto;
+		}
 	}
 	.signin {
 		min-height: 38px;

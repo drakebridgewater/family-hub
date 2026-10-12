@@ -1,0 +1,309 @@
+---
+/**
+ * Header apps button + quick launcher, on every page for signed-in people.
+ * Opens with the button, "/" or ⌘K / Ctrl+K; type to filter, ↑↓ and Enter to open.
+ */
+import type { Launcher } from "../lib/services";
+import { resolveIcon } from "../lib/services";
+
+interface Props {
+	launcher: Launcher;
+}
+const { launcher } = Astro.props;
+const groups = [
+	...(launcher.favorites.length ? [{ id: "fav", title: "★ Favorites", services: launcher.favorites, fav: true }] : []),
+	...launcher.sections.map((s) => ({ ...s, fav: false })),
+];
+---
+
+{
+	groups.length > 0 && (
+		<>
+			<button type="button" class="launch" data-launcher-open aria-haspopup="dialog" aria-controls="launcher" title="Apps (press /)">
+				<span aria-hidden="true">▦</span>
+				<span class="visually-hidden">Apps</span>
+			</button>
+			<dialog id="launcher" class="launcher card" aria-label="Apps">
+				<div class="launcher__head">
+					<span class="launcher__glass" aria-hidden="true">⌕</span>
+					<input
+						type="search"
+						class="launcher__input"
+						placeholder="Find an app…"
+						aria-label="Find an app"
+						aria-controls="launcher-list"
+						autocomplete="off"
+						spellcheck="false"
+					/>
+					<form method="dialog">
+						<button class="launcher__close" aria-label="Close">esc</button>
+					</form>
+				</div>
+				<div class="launcher__list" id="launcher-list">
+					{groups.map((g) => (
+						<section class="launcher__group" data-fav={g.fav ? "" : undefined}>
+							<h3 class="launcher__title">{g.title}</h3>
+							<ul role="list">
+								{g.services.map((svc) => {
+									const icon = resolveIcon(svc.icon);
+									return (
+										<li>
+											<a
+												class="row"
+												href={svc.url}
+												rel="noopener"
+												data-search={`${svc.name} ${svc.description ?? ""} ${g.fav ? "" : g.title}`.toLowerCase()}
+											>
+												<span class="row__icon" aria-hidden="true">
+													{icon.kind === "img" ? <img src={icon.value} alt="" width="24" height="24" loading="lazy" /> : icon.value}
+												</span>
+												<span class="row__name">{svc.name}</span>
+												{svc.description && <span class="row__desc">{svc.description}</span>}
+											</a>
+										</li>
+									);
+								})}
+							</ul>
+						</section>
+					))}
+					<p class="launcher__none" hidden>No apps match.</p>
+				</div>
+				<p class="launcher__foot">
+					<kbd>↑</kbd><kbd>↓</kbd> move · <kbd>Enter</kbd> open · <kbd>/</kbd> or <kbd>⌘K</kbd> from any page
+				</p>
+			</dialog>
+		</>
+	)
+}
+
+<script>
+	const dialog = document.querySelector<HTMLDialogElement>("#launcher");
+	if (dialog) {
+		const input = dialog.querySelector<HTMLInputElement>(".launcher__input")!;
+		const rows = [...dialog.querySelectorAll<HTMLAnchorElement>(".row")];
+		const groups = [...dialog.querySelectorAll<HTMLElement>(".launcher__group")];
+		const none = dialog.querySelector<HTMLElement>(".launcher__none")!;
+		let active: HTMLAnchorElement | undefined;
+
+		const visible = () => rows.filter((r) => !r.closest("[hidden]"));
+		const setActive = (row?: HTMLAnchorElement) => {
+			active?.classList.remove("is-active");
+			active = row;
+			row?.classList.add("is-active");
+			row?.scrollIntoView({ block: "nearest" });
+		};
+		const filter = () => {
+			const words = input.value.toLowerCase().split(/\s+/).filter(Boolean);
+			for (const row of rows) {
+				row.parentElement!.hidden = !words.every((w) => row.dataset.search!.includes(w));
+			}
+			for (const group of groups) {
+				// While searching, favorites would just repeat apps listed in their sections.
+				group.hidden =
+					(words.length > 0 && group.hasAttribute("data-fav")) || !group.querySelector("li:not([hidden])");
+			}
+			none.hidden = visible().length > 0;
+			setActive(words.length ? visible()[0] : undefined);
+		};
+		const open = () => {
+			if (dialog.open) return;
+			input.value = "";
+			filter();
+			dialog.showModal();
+			input.focus();
+		};
+
+		for (const button of document.querySelectorAll("[data-launcher-open]")) button.addEventListener("click", open);
+		input.addEventListener("input", filter);
+		input.addEventListener("keydown", (event) => {
+			const list = visible();
+			const i = active ? list.indexOf(active) : -1;
+			if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+				event.preventDefault();
+				const step = event.key === "ArrowDown" ? 1 : -1;
+				setActive(list[(i + step + list.length) % list.length]);
+			} else if (event.key === "Enter" && (active ?? list[0])) {
+				event.preventDefault();
+				const href = (active ?? list[0]).href;
+				if (event.metaKey || event.ctrlKey) window.open(href, "_blank", "noopener");
+				else location.href = href;
+			}
+		});
+		// Click outside the panel (on the backdrop) closes it.
+		dialog.addEventListener("click", (event) => {
+			if (event.target === dialog) dialog.close();
+		});
+
+		document.addEventListener("keydown", (event) => {
+			const el = event.target as HTMLElement;
+			const typing = el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName);
+			const cmdK = event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey) && !event.altKey;
+			const slash = event.key === "/" && !typing && !event.metaKey && !event.ctrlKey && !event.altKey;
+			if (cmdK || slash) {
+				event.preventDefault();
+				dialog.open ? dialog.close() : open();
+			}
+		});
+	}
+</script>
+
+<style>
+	.launch {
+		appearance: none;
+		flex-shrink: 0;
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		border: 1px solid var(--line);
+		background: transparent;
+		color: var(--text);
+		font: inherit;
+		font-size: 1.15rem;
+		line-height: 1;
+		cursor: pointer;
+	}
+	.launch:hover {
+		border-color: var(--accent);
+		color: var(--accent);
+	}
+	.launcher {
+		width: min(560px, calc(100vw - 24px));
+		max-height: min(640px, calc(100dvh - 48px));
+		margin: 10vh auto auto;
+		padding: 0;
+		color: var(--text);
+		overflow: hidden;
+		flex-direction: column;
+	}
+	.launcher[open] {
+		display: flex;
+	}
+	.launcher::backdrop {
+		background: rgb(20 17 14 / 0.4);
+		backdrop-filter: blur(2px);
+	}
+	.launcher__head {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 10px 12px 10px 16px;
+		border-bottom: 1px solid var(--line);
+	}
+	.launcher__glass {
+		color: var(--muted);
+		font-size: 1.3rem;
+	}
+	.launcher__input {
+		flex: 1;
+		min-width: 0;
+		border: 0;
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		font-size: 1.05rem;
+		padding: 8px 0;
+		outline: none;
+	}
+	.launcher__close {
+		appearance: none;
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		background: var(--surface-2);
+		color: var(--muted);
+		font: inherit;
+		font-size: 0.75rem;
+		padding: 4px 8px;
+		cursor: pointer;
+	}
+	.launcher__list {
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		padding: 6px 8px 10px;
+	}
+	.launcher__group ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.launcher__title {
+		margin: 10px 8px 4px;
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--muted);
+	}
+	.row {
+		display: grid;
+		grid-template-columns: 32px auto 1fr;
+		align-items: center;
+		gap: 12px;
+		min-height: 44px;
+		padding: 6px 8px;
+		border-radius: var(--radius-sm);
+		text-decoration: none;
+	}
+	.row:hover,
+	.row.is-active,
+	.row:focus-visible {
+		background: var(--surface-2);
+		outline: none;
+	}
+	.row.is-active {
+		box-shadow: inset 3px 0 0 var(--accent);
+	}
+	.row__icon {
+		width: 32px;
+		height: 32px;
+		border-radius: 9px;
+		display: grid;
+		place-items: center;
+		background: var(--surface-2);
+		font-size: 1.1rem;
+	}
+	.row__icon img {
+		width: 22px;
+		height: 22px;
+		object-fit: contain;
+	}
+	.row__name {
+		font-weight: 600;
+		white-space: nowrap;
+	}
+	.row__desc {
+		color: var(--muted);
+		font-size: 0.85rem;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.launcher__none {
+		margin: 16px 8px;
+		color: var(--muted);
+	}
+	.launcher__foot {
+		margin: 0;
+		padding: 8px 16px;
+		border-top: 1px solid var(--line);
+		color: var(--muted);
+		font-size: 0.75rem;
+	}
+	kbd {
+		font: inherit;
+		font-size: 0.72rem;
+		padding: 1px 5px;
+		margin-right: 2px;
+		border: 1px solid var(--line);
+		border-radius: 5px;
+		background: var(--surface-2);
+	}
+	/* Phones: no keyboard, so skip the hints and use the full screen height. */
+	@media (max-width: 559px) {
+		.launcher {
+			margin-top: calc(12px + env(safe-area-inset-top));
+		}
+		.launcher__foot {
+			display: none;
+		}
+	}
+</style>

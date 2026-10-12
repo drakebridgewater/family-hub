@@ -1,0 +1,149 @@
+---
+import type { Service } from "../lib/services";
+import { resolveIcon } from "../lib/services";
+
+interface Props {
+	svc: Service;
+}
+const { svc } = Astro.props;
+const icon = resolveIcon(svc.icon);
+---
+
+<a class="tile" href={svc.url} rel="noopener" title={svc.description}>
+	<span class="tile__icon" aria-hidden="true">
+		{icon.kind === "img" ? <img src={icon.value} alt="" width="40" height="40" decoding="async" /> : icon.value}
+	</span>
+	<span class="tile__name">{svc.name}</span>
+	{svc.description && <span class="tile__desc">{svc.description}</span>}
+</a>
+
+<style>
+	/* Laid out by the .apps container in ServiceGrid (data-view + its width). */
+	.tile {
+		display: grid;
+		justify-items: center;
+		gap: 6px;
+		text-align: center;
+		text-decoration: none;
+		padding: 4px 0;
+		border-radius: var(--radius-sm);
+		-webkit-tap-highlight-color: transparent;
+	}
+	.tile__icon {
+		width: 60px;
+		height: 60px;
+		border-radius: 16px;
+		display: grid;
+		place-items: center;
+		font-size: 1.8rem;
+		background: var(--surface);
+		border: 1px solid var(--line);
+		box-shadow: var(--shadow);
+		transition: transform 0.15s ease;
+	}
+	.tile:hover .tile__icon {
+		border-color: var(--accent);
+	}
+	.tile:active .tile__icon {
+		transform: scale(0.92);
+	}
+	.tile__icon img {
+		width: 38px;
+		height: 38px;
+		object-fit: contain;
+	}
+	.tile__name {
+		max-width: 100%;
+		font-size: 0.75rem;
+		font-weight: 600;
+		line-height: 1.2;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.tile__desc {
+		display: none;
+	}
+
+	/* Detailed rows: always for "detailed"; for "auto" at in-between widths (tablet apps tab). */
+	:global(.apps[data-view="detailed"]) .tile {
+		grid-template-columns: 44px 1fr;
+		grid-template-rows: auto auto;
+		justify-items: start;
+		align-items: center;
+		column-gap: 12px;
+		row-gap: 0;
+		text-align: left;
+		padding: 10px 12px;
+		background: var(--surface);
+		border: 1px solid var(--line);
+	}
+	:global(.apps[data-view="detailed"]) .tile:hover {
+		border-color: var(--accent);
+	}
+	:global(.apps[data-view="detailed"]) .tile__icon {
+		grid-row: span 2;
+		width: 44px;
+		height: 44px;
+		border-radius: 12px;
+		box-shadow: none;
+		background: var(--surface-2);
+		border: 0;
+	}
+	:global(.apps[data-view="detailed"]) .tile__icon img {
+		width: 30px;
+		height: 30px;
+	}
+	:global(.apps[data-view="detailed"]) .tile__name {
+		font-size: 0.95rem;
+		align-self: end;
+		white-space: normal;
+	}
+	:global(.apps[data-view="detailed"]) .tile__desc {
+		display: block;
+		font-size: 0.8rem;
+		color: var(--muted);
+		align-self: start;
+	}
+	@container apps (min-width: 520px) and (max-width: 899px) {
+		:global(.apps[data-view="auto"]) .tile {
+			grid-template-columns: 44px 1fr;
+			grid-template-rows: auto auto;
+			justify-items: start;
+			align-items: center;
+			column-gap: 12px;
+			row-gap: 0;
+			text-align: left;
+			padding: 10px 12px;
+			background: var(--surface);
+			border: 1px solid var(--line);
+		}
+		:global(.apps[data-view="auto"]) .tile:hover {
+			border-color: var(--accent);
+		}
+		:global(.apps[data-view="auto"]) .tile__icon {
+			grid-row: span 2;
+			width: 44px;
+			height: 44px;
+			border-radius: 12px;
+			box-shadow: none;
+			background: var(--surface-2);
+			border: 0;
+		}
+		:global(.apps[data-view="auto"]) .tile__icon img {
+			width: 30px;
+			height: 30px;
+		}
+		:global(.apps[data-view="auto"]) .tile__name {
+			font-size: 0.95rem;
+			align-self: end;
+			white-space: normal;
+		}
+		:global(.apps[data-view="auto"]) .tile__desc {
+			display: block;
+			font-size: 0.8rem;
+			color: var(--muted);
+			align-self: start;
+		}
+	}
+</style>

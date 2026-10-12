@@ -33,6 +33,9 @@ services:
       AUTHELIA_INTERNAL_URL: ${AUTHELIA_INTERNAL_URL:-http://authelia:9091}
       AUTHELIA_PUBLIC_URL: ${AUTHELIA_PUBLIC_URL}
       AUTHELIA_SESSION_COOKIE: ${AUTHELIA_SESSION_COOKIE:-authelia_session}
+      ACCOUNT_SECURITY_URL: ${ACCOUNT_SECURITY_URL:-}
+      # Groups that can manage the app list for everyone at /admin/apps
+      ADMIN_GROUPS: ${ADMIN_GROUPS:-admin}
       # --- Schedule ---
       CALENDAR_FEEDS: ${CALENDAR_FEEDS:-}
       SCHEDULE_VISIBILITY: ${SCHEDULE_VISIBILITY:-members}

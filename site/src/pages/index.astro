@@ -7,7 +7,7 @@ import PostCard from "../components/PostCard.astro";
 import ServiceGrid from "../components/ServiceGrid.astro";
 import Schedule from "../components/Schedule.astro";
 import { getFamilyUser } from "../lib/auth";
-import { servicesFor, withoutHidden } from "../lib/services";
+import { arrange, isAppAdmin, servicesFor } from "../lib/services";
 import { getSchedule, scheduleEnabled } from "../lib/calendar";
 import { DEFAULT_PREFS, getPrefs, TABS, type HomeTab } from "../lib/prefs";
 import { isMembersOnly } from "../lib/visibility";
@@ -31,9 +31,9 @@ const posts = (user ? recent : recent.filter((post) => !isMembersOnly(post))).sl
 const [postTerms, sidebarArea] = await Promise.all([termsForPosts(posts.map((p) => p.data.id)), getWidgetArea("sidebar")]);
 const hasWidgets = (sidebarArea?.widgets.length ?? 0) > 0;
 // Two columns on desktop when there's something for the sidebar.
-const split = !!user || hasWidgets;
-const visibleSections = withoutHidden(sections, prefs.hidden);
-const hiddenCount = sections.reduce((n, s) => n + s.services.length, 0) - visibleSections.reduce((n, s) => n + s.services.length, 0);
+const split = (!!user && showSchedule) || hasWidgets;
+const launcher = arrange(sections, prefs);
+const isAdmin = isAppAdmin(user);
 const showNewPost = !!user && canPost(user.groups);
 const scheduleLabel = prefs.days === 1 ? "Today" : `Next ${prefs.days} days`;
 
@@ -65,7 +65,7 @@ const tabIds = tabs.map((t) => t.id);
 const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) && tabIds.includes(t)) ?? tabIds[0];
 ---
 
-<Base user={user} tabs={tabs} activeTab={activeTab} wide={split}>
+<Base user={user} tabs={tabs} activeTab={activeTab} wide={split || !!user} launcher={user ? launcher : undefined}>
 	{
 		user ? (
 			<section class="hello" aria-labelledby="hello-title">
@@ -81,6 +81,33 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 					shared apps.
 				</p>
 				<a href="/login" class="btn">Sign in with your family account</a>
+			</section>
+		)
+	}
+
+	{/* Apps span the full width on desktop, above the feed and schedule; a tab on phones. */}
+	{
+		user && (
+			<section id="apps" class="section panel panel--apps" aria-labelledby="apps-title">
+				<div class="section__head">
+					<h2 id="apps-title" class="section__title">Your apps</h2>
+					<span class="apps-tools">
+						<button type="button" class="findapp" data-launcher-open title="Find an app (press /)">
+							<span aria-hidden="true">⌕</span> Find <kbd>/</kbd>
+						</button>
+						<span class="viewswitch" role="group" aria-label="App layout">
+							<button type="button" data-app-view="compact" aria-pressed={String(prefs.appView === "compact")} title="Compact: icons only">▦</button>
+							<button type="button" data-app-view="detailed" aria-pressed={String(prefs.appView === "detailed")} title="Detailed: show descriptions">☰</button>
+						</span>
+						<a class="section__meta section__link" href="/settings#apps">
+							{launcher.hiddenCount ? `${launcher.hiddenCount} hidden · Edit` : "Edit"}
+						</a>
+						{isAdmin && (
+							<a class="section__meta section__link" href="/admin/apps">Manage</a>
+						)}
+					</span>
+				</div>
+				<ServiceGrid sections={launcher.sections} favorites={launcher.favorites} view={prefs.appView} isAdmin={isAdmin} />
 			</section>
 		)
 	}
@@ -115,37 +142,18 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 		</section>
 
 		{split && (
-		<aside class="side" aria-label="Schedule, apps and more">
+		<aside class="side" aria-label="Schedule and more">
 			{
-				user && (
-					<>
-					{showSchedule && (
-						<section id="schedule" class="section panel panel--schedule" aria-labelledby="schedule-title">
-							<div class="section__head">
-								<h2 id="schedule-title" class="section__title">Coming up</h2>
-								<a class="section__meta section__link" href="/settings#days">
-									{scheduleLabel}
-								</a>
-							</div>
-							<Schedule items={schedule} days={prefs.days} />
-						</section>
-					)}
-					<section id="apps" class="section panel panel--apps" aria-labelledby="apps-title">
+				user && showSchedule && (
+					<section id="schedule" class="section panel panel--schedule" aria-labelledby="schedule-title">
 						<div class="section__head">
-							<h2 id="apps-title" class="section__title">Your apps</h2>
-							<span class="apps-tools">
-								<span class="viewswitch" role="group" aria-label="App layout">
-									<button type="button" data-app-view="compact" aria-pressed={String(prefs.appView === "compact")} title="Compact: icons only">▦</button>
-									<button type="button" data-app-view="detailed" aria-pressed={String(prefs.appView === "detailed")} title="Detailed: show descriptions">☰</button>
-								</span>
-								<a class="section__meta section__link" href="/settings#apps">
-									{hiddenCount ? `${hiddenCount} hidden · Edit` : "Edit"}
-								</a>
-							</span>
+							<h2 id="schedule-title" class="section__title">Coming up</h2>
+							<a class="section__meta section__link" href="/settings#days">
+								{scheduleLabel}
+							</a>
 						</div>
-						<ServiceGrid sections={visibleSections} view={prefs.appView} />
+						<Schedule items={schedule} days={prefs.days} />
 					</section>
-					</>
 				)
 			}
 			{/* EmDash widgets: create a widget area named "sidebar" in the admin. On phones they show under the feed. */}
@@ -227,6 +235,33 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 		align-items: center;
 		gap: 10px;
 	}
+	.findapp {
+		appearance: none;
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		height: 30px;
+		padding: 0 6px 0 10px;
+		border: 1px solid var(--line);
+		border-radius: 999px;
+		background: transparent;
+		color: var(--muted);
+		font: inherit;
+		font-size: 0.85rem;
+		cursor: pointer;
+	}
+	.findapp:hover {
+		border-color: var(--accent);
+		color: var(--text);
+	}
+	.findapp kbd {
+		font: inherit;
+		font-size: 0.72rem;
+		padding: 0 6px;
+		border: 1px solid var(--line);
+		border-radius: 5px;
+		background: var(--surface-2);
+	}
 	.viewswitch {
 		display: inline-flex;
 		border: 1px solid var(--line);
@@ -269,12 +304,26 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 		:global(body[data-tab="feed"]) .hello {
 			display: block;
 		}
+		.panel--apps,
 		.home .section:first-child,
 		.side .section {
 			margin-top: 16px;
 		}
+		/* No "/" key on a phone; the button still opens the search. */
+		.findapp kbd {
+			display: none;
+		}
+		.section__title {
+			white-space: nowrap;
+		}
 	}
-	/* Desktop: feed on the left, schedule and apps beside it. */
+	/* Phones: the header's apps button does the same, and the row is tight. */
+	@media (max-width: 559px) {
+		.findapp {
+			display: none;
+		}
+	}
+	/* Desktop: apps across the top, then the feed with the schedule beside it. */
 	@media (min-width: 900px) {
 		.home--split {
 			display: grid;

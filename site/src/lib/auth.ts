@@ -80,3 +80,13 @@ export function logoutUrl(): string {
 	const authUrl = env("AUTHELIA_PUBLIC_URL", "https://authelia.bridgewater.digital");
 	return `${authUrl}/logout?rd=${encodeURIComponent(SITE_URL.origin + "/")}`;
 }
+
+/**
+ * Where people change their password and 2FA devices. Authelia's own settings
+ * page by default (password change there needs Authelia 4.39+); set
+ * ACCOUNT_SECURITY_URL to point somewhere else, e.g. lldap's change-password page.
+ */
+export function securityUrl(): string {
+	const authUrl = env("AUTHELIA_PUBLIC_URL", "https://authelia.bridgewater.digital");
+	return env("ACCOUNT_SECURITY_URL") || `${authUrl}/settings`;
+}

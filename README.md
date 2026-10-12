@@ -48,8 +48,15 @@ forged header just gets the public view.
 - **Family-only post:** turn on *Family only* when writing it. Visitors who aren't signed in won't see it in the feed,
   and its link shows a sign-in prompt instead. (Existing installs: add a Boolean field `members_only` to Posts once,
   under Content types.) Photos in it are still reachable by their direct URL.
-- **Add or remove apps:** edit `/mnt/user/appdata/family-hub/config/services.yaml`. Changes apply on the next page load.
-  `icon:` accepts a [dashboard-icons](https://dashboardicons.com) slug, an image URL, or an emoji.
+- **Add or remove apps:** members of the `admin` group (set `ADMIN_GROUPS` to change it) use *Manage apps* in the
+  account menu (`/admin/apps`). Each app can be **Shown** (people may hide it for themselves), **Always shown**, or
+  **Hidden** from everyone. Until the first change there, apps come from `config/services.yaml`; that first save copies
+  them into Postgres and the file is no longer read. Icons: a [dashboard-icons](https://dashboardicons.com) name (guessed
+  from the app name), an image URL, or an emoji.
+- **Finding apps:** press `/` or ⌘K / Ctrl+K on any page (or the ▦ button in the header) to search apps. Each person
+  can star favorites on *Customize home*; the rest then fold under "All apps".
+- **Passwords & 2FA:** *Password & security* in the account menu opens Authelia's settings page (changing a password
+  there needs Authelia 4.39+). Point `ACCOUNT_SECURITY_URL` elsewhere, e.g. lldap's change-password page, if you prefer.
 - **Give someone access:** add them to Authelia's `users_database.yml` with `family` or `extended-family` groups.
   Tiles only *hide* links; each service still needs its own Authelia rule.
 - **Schedule:** set `CALENDAR_FEEDS="Family|https://…ics,Kids|https://…ics"` (Google Calendar → *Secret address in iCal format*).

@@ -1,0 +1,244 @@
+---
+/** Inputs for one app on /admin/apps (add and edit forms). */
+import type { Service, ServiceSection } from "../lib/services";
+import { resolveIcon } from "../lib/services";
+
+interface Props {
+	svc?: Service;
+	/** Every section; editing an app can move it to another one. */
+	sections?: ServiceSection[];
+	sectionId: string;
+	/** Groups to offer as checkboxes. */
+	knownGroups: string[];
+}
+const { svc, sections = [], sectionId, knownGroups } = Astro.props;
+const uid = svc?.id ?? `new-${sectionId}`;
+const groups = new Set(svc?.groups ?? []);
+const otherGroups = [...groups].filter((g) => !knownGroups.includes(g)).join(", ");
+const preview = svc?.icon ? resolveIcon(svc.icon) : null;
+const policies = [
+	{ id: "optional", label: "Shown", hint: "People can hide it for themselves" },
+	{ id: "always", label: "Always shown", hint: "Can't be hidden" },
+	{ id: "hidden", label: "Hidden", hint: "Off for everyone, kept for later" },
+];
+---
+
+<div class="fields" data-app-fields data-new={svc ? undefined : ""}>
+	<label class="field">
+		<span class="field__label">Name</span>
+		<input name="name" required maxlength="60" value={svc?.name} placeholder="Jellyfin" autocomplete="off" />
+	</label>
+	<label class="field">
+		<span class="field__label">Web address</span>
+		<input
+			name="url"
+			required
+			maxlength="500"
+			value={svc?.url}
+			placeholder="https://jellyfin.example.com"
+			pattern="(https?://.+|/[^/].*)"
+			title="https://… or a path on this site like /photos"
+			autocomplete="off"
+		/>
+	</label>
+	<div class="field field--icon">
+		<label for={`icon-${uid}`} class="field__label">Icon</label>
+		<div class="icon-row">
+			<span class="icon-preview" aria-hidden="true" data-icon-preview>
+				{preview?.kind === "img" ? <img src={preview.value} alt="" width="28" height="28" /> : (preview?.value ?? "🔗")}
+			</span>
+			<input id={`icon-${uid}`} name="icon" maxlength="300" value={svc?.icon} placeholder="jellyfin" autocomplete="off" />
+		</div>
+		<span class="field__hint">
+			A <a href="https://dashboardicons.com" target="_blank" rel="noopener">dashboard-icons</a> name, an image URL, or an
+			emoji.
+		</span>
+	</div>
+	<label class="field">
+		<span class="field__label">Description <span class="field__opt">optional</span></span>
+		<input name="description" maxlength="120" value={svc?.description} placeholder="Movies & TV" autocomplete="off" />
+	</label>
+	<fieldset class="field">
+		<legend class="field__label">Who sees it</legend>
+		<div class="checks">
+			{
+				knownGroups.map((g) => (
+					<label class="check">
+						<input type="checkbox" name="groups" value={g} checked={groups.has(g)} />
+						<span>{g}</span>
+					</label>
+				))
+			}
+		</div>
+		<input name="otherGroups" value={otherGroups} placeholder="Other groups, comma-separated" autocomplete="off" />
+		<span class="field__hint">None ticked = everyone who's signed in.</span>
+	</fieldset>
+	<fieldset class="field">
+		<legend class="field__label">Visibility</legend>
+		<div class="checks">
+			{
+				policies.map((p) => (
+					<label class="check" title={p.hint}>
+						<input type="radio" name="policy" value={p.id} checked={(svc?.policy ?? "optional") === p.id} />
+						<span>{p.label}</span>
+					</label>
+				))
+			}
+		</div>
+		<span class="field__hint">{policies.map((p) => `${p.label}: ${p.hint.toLowerCase()}.`).join(" ")}</span>
+	</fieldset>
+	{
+		svc && sections.length > 1 && (
+			<label class="field">
+				<span class="field__label">Section</span>
+				<select name="moveTo">
+					{sections.map((s) => (
+						<option value={s.id} selected={s.id === sectionId}>
+							{s.title || "(untitled)"}
+						</option>
+					))}
+				</select>
+			</label>
+		)
+	}
+</div>
+
+<script>
+	// Live icon preview, and for new apps, guess the dashboard-icons name from
+	// the app's name (kept only if that icon actually exists).
+	const CDN = "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/";
+	const src = (icon: string) =>
+		/^https?:\/\//.test(icon) || icon.startsWith("/") ? icon : /^[a-z0-9-]+$/.test(icon) ? `${CDN}${icon}.png` : null;
+
+	for (const fields of document.querySelectorAll<HTMLElement>("[data-app-fields]")) {
+		const name = fields.querySelector<HTMLInputElement>("[name=name]")!;
+		const icon = fields.querySelector<HTMLInputElement>("[name=icon]")!;
+		const preview = fields.querySelector<HTMLElement>("[data-icon-preview]")!;
+		let guessed = false;
+
+		const show = () => {
+			const value = icon.value.trim();
+			const url = value ? src(value) : null;
+			preview.replaceChildren();
+			if (!url) {
+				preview.textContent = value || "🔗";
+				return;
+			}
+			const img = new Image(28, 28);
+			img.alt = "";
+			img.onerror = () => {
+				if (guessed) {
+					icon.value = "";
+					guessed = false;
+				}
+				preview.textContent = icon.value ? "?" : "🔗";
+			};
+			img.src = url;
+			preview.append(img);
+		};
+		icon.addEventListener("input", () => {
+			guessed = false;
+			show();
+		});
+		if (fields.hasAttribute("data-new")) {
+			name.addEventListener("change", () => {
+				if (icon.value && !guessed) return;
+				const slug = name.value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+				icon.value = slug;
+				guessed = !!slug;
+				show();
+			});
+		}
+	}
+</script>
+
+<style>
+	.fields {
+		display: grid;
+		gap: 14px;
+	}
+	.field {
+		display: grid;
+		gap: 4px;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		min-width: 0;
+	}
+	.field__label {
+		padding: 0;
+		font-weight: 600;
+		font-size: 0.875rem;
+	}
+	.field__opt,
+	.field__hint {
+		color: var(--muted);
+		font-weight: 400;
+		font-size: 0.8rem;
+	}
+	.field__hint a {
+		color: var(--accent);
+	}
+	input:not([type="checkbox"], [type="radio"]),
+	select {
+		width: 100%;
+		min-height: 42px;
+		padding: 0 12px;
+		border: 1px solid var(--line);
+		border-radius: 10px;
+		background: var(--bg);
+		color: var(--text);
+		font: inherit;
+	}
+	input:focus,
+	select:focus {
+		outline: 2px solid var(--accent);
+		outline-offset: 0;
+	}
+	.icon-row {
+		display: flex;
+		gap: 10px;
+		align-items: center;
+	}
+	.icon-preview {
+		flex: 0 0 42px;
+		height: 42px;
+		border-radius: 10px;
+		display: grid;
+		place-items: center;
+		background: var(--surface-2);
+		font-size: 1.3rem;
+	}
+	.icon-preview :global(img) {
+		width: 28px;
+		height: 28px;
+		object-fit: contain;
+	}
+	.checks {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		margin-bottom: 6px;
+	}
+	.check {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		min-height: 36px;
+		padding: 0 12px;
+		border: 1px solid var(--line);
+		border-radius: 999px;
+		background: var(--surface-2);
+		font-size: 0.875rem;
+		font-weight: 600;
+		cursor: pointer;
+	}
+	.check:has(input:checked) {
+		border-color: var(--accent);
+		background: var(--accent-soft);
+	}
+	.check input {
+		accent-color: var(--accent);
+		margin: 0;
+	}
+</style>

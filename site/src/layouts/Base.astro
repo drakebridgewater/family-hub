@@ -3,8 +3,10 @@ import { getMenu, getSiteSettings } from "emdash";
 import { createPublicPageContext } from "emdash/page";
 import { EmDashBodyEnd, EmDashBodyStart, EmDashHead, Image } from "emdash/ui";
 import type { FamilyUser } from "../lib/auth";
-import { logoutUrl } from "../lib/auth";
+import { logoutUrl, securityUrl } from "../lib/auth";
 import { canPost, EDITOR_URL } from "../lib/editor-roles";
+import { isAppAdmin, launcherFor, type Launcher } from "../lib/services";
+import AppLauncher from "../components/AppLauncher.astro";
 import "../styles/global.css";
 
 interface Props {
@@ -25,6 +27,8 @@ interface Props {
 	 * one built from their entry; everything else gets a plain one.
 	 */
 	page?: Parameters<typeof EmDashHead>[0]["page"];
+	/** The signed-in person's apps, if the page already loaded them (else loaded here). */
+	launcher?: Launcher;
 }
 
 const { title, description, user = null, tabs = [], activeTab, wide = false } = Astro.props;
@@ -37,6 +41,7 @@ const page =
 	Astro.props.page ??
 	createPublicPageContext({ Astro, kind: "custom", title: title ?? siteTitle, description: description ?? tagline, siteName: siteTitle });
 const isCurrent = (url: string) => url === Astro.url.pathname;
+const launcher = user ? (Astro.props.launcher ?? (await launcherFor(user))) : null;
 
 const initials = (user?.name ?? "")
 	.split(/\s+/)
@@ -137,6 +142,9 @@ const initials = (user?.name ?? "")
 					)
 				}
 				{
+					launcher && <AppLauncher launcher={launcher} />
+				}
+				{
 					user ? (
 						<details class="account">
 							<summary class="avatar" aria-label={`Account menu for ${user.name}`}>
@@ -153,6 +161,10 @@ const initials = (user?.name ?? "")
 									</a>
 								)}
 								<a href="/settings" class="btn btn--ghost">Customize home</a>
+								{isAppAdmin(user) && (
+									<a href="/admin/apps" class="btn btn--ghost">Manage apps</a>
+								)}
+								<a href={securityUrl()} class="btn btn--ghost">Password &amp; security</a>
 								<a href={logoutUrl()} class="btn btn--ghost">Sign out</a>
 							</div>
 						</details>
@@ -236,6 +248,8 @@ const initials = (user?.name ?? "")
 		gap: 8px;
 		text-decoration: none;
 		min-width: 0;
+		/* Menu, apps button and avatar line up on the right. */
+		margin-right: auto;
 	}
 	.brand__mark {
 		color: var(--accent);
@@ -256,7 +270,6 @@ const initials = (user?.name ?? "")
 		border-radius: 8px;
 	}
 	.menu {
-		margin-left: auto;
 		min-width: 0;
 	}
 	.menu ul {

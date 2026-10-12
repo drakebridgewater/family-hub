@@ -1,7 +1,7 @@
 ---
 import Base from "../layouts/Base.astro";
 import { getFamilyUser } from "../lib/auth";
-import { servicesFor, resolveIcon } from "../lib/services";
+import { isAppAdmin, prefMatches, resolveIcon, servicesFor } from "../lib/services";
 import { maxScheduleDays, scheduleEnabled } from "../lib/calendar";
 import { DAY_CHOICES, getPrefs, savePrefs, type AppView, type HomeTab } from "../lib/prefs";
 
@@ -11,7 +11,7 @@ if (!user) return Astro.redirect("/login", 302);
 Astro.response.headers.set("Cache-Control", "private, no-store");
 
 const sections = await servicesFor(user);
-const allUrls = sections.flatMap((s) => s.services.map((svc) => svc.url));
+const allApps = sections.flatMap((s) => s.services);
 const showSchedule = scheduleEnabled();
 const dayChoices = DAY_CHOICES.filter((d) => d <= maxScheduleDays());
 
@@ -23,8 +23,16 @@ if (Astro.request.method === "POST") {
 
 	const form = await Astro.request.formData();
 	const shown = new Set(form.getAll("show").map(String));
+	const starred = new Set(form.getAll("pin").map(String));
+	// Keep the order favorites were starred in; new ones go at the end.
+	const before = (await getPrefs(user.username)).pinned;
+	const pinned = [
+		...before.filter((id) => starred.has(id)),
+		...allApps.map((svc) => svc.id).filter((id) => starred.has(id) && !before.includes(id)),
+	];
 	await savePrefs(user.username, {
-		hidden: allUrls.filter((url) => !shown.has(url)),
+		hidden: allApps.filter((svc) => svc.policy !== "always" && !shown.has(svc.id)).map((svc) => svc.id),
+		pinned,
 		days: Number(form.get("days")),
 		startTab: String(form.get("startTab")) as HomeTab,
 		appView: String(form.get("appView")) as AppView,
@@ -34,6 +42,8 @@ if (Astro.request.method === "POST") {
 
 const prefs = await getPrefs(user.username);
 const hidden = new Set(prefs.hidden);
+const pinned = new Set(prefs.pinned);
+const isAdmin = isAppAdmin(user);
 const tabChoices: Array<{ id: HomeTab; label: string }> = [
 	{ id: "feed", label: "Feed" },
 	...(showSchedule ? [{ id: "schedule" as const, label: "Schedule" }] : []),
@@ -101,7 +111,11 @@ const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 					))
 				}
 			</div>
-			<p class="hint">Turn off the ones you don't use. You can turn them back on any time.</p>
+			<p class="hint">
+				Star <span aria-hidden="true">★</span> your favorites to keep them up top (the rest fold under "All apps"), and turn
+				off the ones you don't use.
+				{isAdmin && <><br /><a href="/admin/apps">Manage apps for everyone →</a></>}
+			</p>
 			{
 				sections.map((section) => (
 					<div class="apps-section">
@@ -111,20 +125,29 @@ const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 								const icon = resolveIcon(svc.icon);
 								return (
 									<li>
-										<label class="app">
+										<div class="app">
 											<span class="app__icon" aria-hidden="true">
 												{icon.kind === "img" ? <img src={icon.value} alt="" width="28" height="28" /> : icon.value}
 											</span>
-											<span class="app__name">{svc.name}</span>
+											<span class="app__name">
+												{svc.name}
+												{svc.policy === "always" && <span class="app__note">Always shown</span>}
+											</span>
+											<label class="star" title={`Favorite ${svc.name}`}>
+												<input type="checkbox" name="pin" value={svc.id} checked={pinned.has(svc.id) || pinned.has(svc.url)} />
+												<span aria-hidden="true">★</span>
+												<span class="visually-hidden">Favorite {svc.name}</span>
+											</label>
 											<input
 												class="switch"
 												type="checkbox"
 												name="show"
-												value={svc.url}
-												checked={!hidden.has(svc.url)}
+												value={svc.id}
+												checked={svc.policy === "always" || !prefMatches(hidden, svc)}
+												disabled={svc.policy === "always"}
 												aria-label={`Show ${svc.name}`}
 											/>
-										</label>
+										</div>
 									</li>
 								);
 							})}
@@ -238,11 +261,10 @@ const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 	}
 	.app {
 		display: grid;
-		grid-template-columns: 36px 1fr auto;
+		grid-template-columns: 36px 1fr auto auto;
 		align-items: center;
 		gap: 12px;
 		min-height: 52px;
-		cursor: pointer;
 	}
 	.app__icon {
 		width: 36px;
@@ -262,6 +284,34 @@ const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 		font-weight: 600;
 		min-width: 0;
 		overflow-wrap: anywhere;
+	}
+	.app__note {
+		display: block;
+		font-weight: 400;
+		font-size: 0.8rem;
+		color: var(--muted);
+	}
+	.star {
+		position: relative;
+		display: grid;
+		place-items: center;
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		font-size: 1.35rem;
+		color: var(--line);
+		cursor: pointer;
+	}
+	.star input {
+		position: absolute;
+		opacity: 0;
+		pointer-events: none;
+	}
+	.star:has(input:checked) {
+		color: #e9a23b;
+	}
+	.star:has(input:focus-visible) {
+		outline: 3px solid var(--accent);
 	}
 	/* iOS-style toggle */
 	.switch {
@@ -292,6 +342,10 @@ const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 	}
 	.switch:checked::after {
 		transform: translateX(20px);
+	}
+	.switch:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
 	}
 	.actions {
 		display: flex;

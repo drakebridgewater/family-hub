@@ -1,0 +1,517 @@
+---
+/**
+ * Manage the app launcher for everyone (ADMIN_GROUPS only). Every change is a
+ * small same-origin form post that edits the catalog and redirects back, so
+ * it works without JavaScript.
+ */
+import Base from "../../layouts/Base.astro";
+import AppFields from "../../components/AppFields.astro";
+import { getFamilyUser } from "../../lib/auth";
+import { EDITOR_ROLE_GROUPS } from "../../lib/editor-roles";
+import {
+	ADMIN_GROUPS,
+	getCatalog,
+	isAppAdmin,
+	newId,
+	normalizeService,
+	parseGroups,
+	resolveIcon,
+	saveCatalog,
+	type ServiceSection,
+} from "../../lib/services";
+
+const user = await getFamilyUser(Astro.request);
+if (!user) return Astro.redirect("/login", 302);
+Astro.response.headers.set("Cache-Control", "private, no-store");
+if (!isAppAdmin(user)) {
+	return new Response(`Only members of ${ADMIN_GROUPS.join(" or ")} can manage apps.`, { status: 403 });
+}
+
+if (Astro.request.method === "POST") {
+	// Same-origin form posts only (the site is public, so guard against CSRF).
+	const siteOrigin = new URL(process.env.EMDASH_SITE_URL ?? Astro.url.origin).origin;
+	if (Astro.request.headers.get("origin") !== siteOrigin) return new Response("Forbidden", { status: 403 });
+
+	const form = await Astro.request.formData();
+	const get = (key: string) => String(form.get(key) ?? "").trim();
+	const back = (anchor: string, error?: string) =>
+		Astro.redirect(`/admin/apps${error ? `?error=${encodeURIComponent(error)}` : "?saved=1"}${anchor ? `#${anchor}` : ""}`, 303);
+
+	const sections: ServiceSection[] = structuredClone((await getCatalog()).sections);
+	const section = sections.find((s) => s.id === get("section"));
+	const findApp = () => {
+		for (const s of sections) {
+			const i = s.services.findIndex((svc) => svc.id === get("app"));
+			if (i >= 0) return { list: s.services, i };
+		}
+		return null;
+	};
+	const appFromForm = (id: string) =>
+		normalizeService(
+			{
+				id,
+				name: get("name"),
+				url: get("url"),
+				icon: get("icon"),
+				description: get("description"),
+				groups: [...form.getAll("groups").map(String), ...parseGroups(get("otherGroups"))],
+				policy: get("policy"),
+			},
+			id,
+		);
+	const move = <T,>(list: T[], i: number, dir: string) => {
+		const j = dir === "up" ? i - 1 : i + 1;
+		if (j >= 0 && j < list.length) [list[i], list[j]] = [list[j], list[i]];
+	};
+	const INVALID = "An app needs a name and a web address starting with https:// (or a /path on this site).";
+
+	let anchor = "";
+	switch (get("do")) {
+		case "add-section": {
+			const id = newId();
+			sections.push({ id, title: get("title").slice(0, 60) || "New section", services: [] });
+			anchor = `section-${id}`;
+			break;
+		}
+		case "rename-section":
+			if (!section) return back("", "That section no longer exists.");
+			section.title = get("title").slice(0, 60);
+			anchor = `section-${section.id}`;
+			break;
+		case "move-section": {
+			const i = sections.findIndex((s) => s === section);
+			if (i < 0) return back("", "That section no longer exists.");
+			move(sections, i, get("dir"));
+			anchor = `section-${section!.id}`;
+			break;
+		}
+		case "delete-section": {
+			const i = sections.findIndex((s) => s === section);
+			if (i >= 0) sections.splice(i, 1);
+			break;
+		}
+		case "add-app": {
+			if (!section) return back("", "That section no longer exists.");
+			const app = appFromForm(newId());
+			if (!app) return back(`section-${section.id}`, INVALID);
+			section.services.push(app);
+			anchor = `app-${app.id}`;
+			break;
+		}
+		case "update-app": {
+			const found = findApp();
+			if (!found) return back("", "That app no longer exists.");
+			const app = appFromForm(found.list[found.i].id);
+			if (!app) return back(`app-${get("app")}`, INVALID);
+			const target = sections.find((s) => s.id === get("moveTo"));
+			if (target && !target.services.includes(found.list[found.i])) {
+				found.list.splice(found.i, 1);
+				target.services.push(app);
+			} else {
+				found.list[found.i] = app;
+			}
+			anchor = `app-${app.id}`;
+			break;
+		}
+		case "move-app": {
+			const found = findApp();
+			if (!found) return back("", "That app no longer exists.");
+			move(found.list, found.i, get("dir"));
+			anchor = `app-${get("app")}`;
+			break;
+		}
+		case "delete-app": {
+			const found = findApp();
+			if (found) found.list.splice(found.i, 1);
+			break;
+		}
+		default:
+			return back("", "Unknown action.");
+	}
+
+	try {
+		await saveCatalog(sections, user.username);
+	} catch (err) {
+		console.error("[family-hub] Saving apps failed:", err);
+		return back(anchor, "Couldn't save. Check the database connection and try again.");
+	}
+	return back(anchor);
+}
+
+const catalog = await getCatalog();
+const sections = catalog.sections;
+const error = Astro.url.searchParams.get("error");
+const saved = Astro.url.searchParams.has("saved");
+const knownGroups = [
+	...new Set([
+		...sections.flatMap((s) => s.services.flatMap((svc) => svc.groups ?? [])),
+		...EDITOR_ROLE_GROUPS.map(([g]) => g),
+		...user.groups,
+	]),
+].sort();
+const policyBadge = { always: "Always shown", hidden: "Hidden from everyone", optional: "" } as const;
+---
+
+<Base title="Manage apps" user={user}>
+	<a href="/" class="back">← Home</a>
+	<h1 class="title">Manage apps</h1>
+	<p class="sub">The app list everyone sees. Changes apply right away.</p>
+
+	{error && <p class="flash flash--error" role="alert">{error}</p>}
+	{saved && !error && <p class="flash" role="status">Saved.</p>}
+	{
+		catalog.source === "file" && (
+			<p class="flash flash--info">
+				These apps come from <code>config/services.yaml</code>. Your first change here copies them into the database, and
+				from then on this page is the place to edit them.
+			</p>
+		)
+	}
+
+	<div class="sections">
+		{
+			sections.map((section, si) => (
+				<section class="card sec" id={`section-${section.id}`}>
+					<div class="sec__head">
+						<form method="post" class="sec__rename">
+							<input type="hidden" name="do" value="rename-section" />
+							<input type="hidden" name="section" value={section.id} />
+							<input name="title" value={section.title} maxlength="60" aria-label="Section name" placeholder="Section name" />
+							<button class="btn btn--ghost btn--sm">Save</button>
+						</form>
+						<form method="post" class="tools">
+							<input type="hidden" name="do" value="move-section" />
+							<input type="hidden" name="section" value={section.id} />
+							<button class="icon-btn" name="dir" value="up" disabled={si === 0} aria-label="Move section up">↑</button>
+							<button class="icon-btn" name="dir" value="down" disabled={si === sections.length - 1} aria-label="Move section down">↓</button>
+						</form>
+						<form method="post" data-confirm={section.services.length ? `Delete "${section.title}" and its ${section.services.length} app(s)?` : undefined}>
+							<input type="hidden" name="do" value="delete-section" />
+							<input type="hidden" name="section" value={section.id} />
+							<button class="icon-btn icon-btn--danger" aria-label={`Delete section ${section.title}`} title="Delete section">✕</button>
+						</form>
+					</div>
+
+					<ul class="apps" role="list">
+						{section.services.map((svc, ai) => {
+							const icon = resolveIcon(svc.icon);
+							return (
+								<li class="app" id={`app-${svc.id}`} data-policy={svc.policy}>
+									<div class="app__row">
+										<span class="app__icon" aria-hidden="true">
+											{icon.kind === "img" ? <img src={icon.value} alt="" width="28" height="28" loading="lazy" /> : icon.value}
+										</span>
+										<span class="app__info">
+											<strong>{svc.name}</strong>
+											<span class="app__url">{svc.url}</span>
+											<span class="badges">
+												{policyBadge[svc.policy] && <span class="badge badge--policy">{policyBadge[svc.policy]}</span>}
+												{svc.groups?.length ? (
+													svc.groups.map((g) => <span class="badge">{g}</span>)
+												) : (
+													<span class="badge">Everyone</span>
+												)}
+											</span>
+										</span>
+										<form method="post" class="tools">
+											<input type="hidden" name="do" value="move-app" />
+											<input type="hidden" name="app" value={svc.id} />
+											<button class="icon-btn" name="dir" value="up" disabled={ai === 0} aria-label={`Move ${svc.name} up`}>↑</button>
+											<button class="icon-btn" name="dir" value="down" disabled={ai === section.services.length - 1} aria-label={`Move ${svc.name} down`}>↓</button>
+										</form>
+									</div>
+									<details class="edit">
+										<summary>Edit</summary>
+										<form method="post" class="edit__form">
+											<input type="hidden" name="app" value={svc.id} />
+											<AppFields svc={svc} sections={sections} sectionId={section.id} knownGroups={knownGroups} />
+											<div class="edit__actions">
+												<button class="btn btn--sm" name="do" value="update-app">Save</button>
+												<button
+													class="btn btn--ghost btn--sm btn--danger"
+													name="do"
+													value="delete-app"
+													formnovalidate
+													data-confirm={`Delete ${svc.name}?`}
+												>
+													Delete
+												</button>
+											</div>
+										</form>
+									</details>
+								</li>
+							);
+						})}
+					</ul>
+
+					<details class="add" open={section.services.length === 0}>
+						<summary>+ Add an app to {section.title || "this section"}</summary>
+						<form method="post" class="edit__form">
+							<input type="hidden" name="do" value="add-app" />
+							<input type="hidden" name="section" value={section.id} />
+							<AppFields sectionId={section.id} knownGroups={knownGroups} />
+							<div class="edit__actions">
+								<button class="btn btn--sm">Add app</button>
+							</div>
+						</form>
+					</details>
+				</section>
+			))
+		}
+	</div>
+
+	<form method="post" class="card newsec">
+		<input type="hidden" name="do" value="add-section" />
+		<label for="new-section" class="newsec__label">New section</label>
+		<div class="newsec__row">
+			<input id="new-section" name="title" maxlength="60" placeholder="e.g. Games" required />
+			<button class="btn btn--sm">Add section</button>
+		</div>
+	</form>
+
+	<p class="note">
+		Who sees an app is a convenience, not security: each app still needs its own Authelia rule. People can star
+		favorites and hide "Shown" apps for themselves on <a href="/settings#apps">Customize home</a>.
+	</p>
+</Base>
+
+<script>
+	// Confirm deletes (a form's data-confirm, or the button that submitted it).
+	document.addEventListener("submit", (event) => {
+		const form = event.target as HTMLFormElement;
+		const submitter = (event as SubmitEvent).submitter as HTMLElement | null;
+		const message = submitter?.dataset.confirm ?? form.dataset.confirm;
+		if (message && !confirm(message)) event.preventDefault();
+	});
+</script>
+
+<style>
+	.title {
+		font-family: var(--font-serif);
+		font-size: clamp(1.5rem, 6vw, 2rem);
+		line-height: 1.15;
+		margin: 8px 0 0;
+	}
+	.sub {
+		margin: 4px 0 0;
+		color: var(--muted);
+	}
+	.flash {
+		margin: 16px 0 0;
+		padding: 12px 14px;
+		border-radius: var(--radius-sm);
+		background: color-mix(in srgb, #2a9d8f 14%, var(--surface));
+		border: 1px solid color-mix(in srgb, #2a9d8f 40%, var(--line));
+	}
+	.flash--error {
+		background: color-mix(in srgb, #d6336c 12%, var(--surface));
+		border-color: color-mix(in srgb, #d6336c 40%, var(--line));
+	}
+	.flash--info {
+		background: var(--surface-2);
+		border-color: var(--line);
+		color: var(--muted);
+		font-size: 0.9rem;
+	}
+	.sections {
+		display: grid;
+		gap: 16px;
+		margin-top: 20px;
+	}
+	.sec {
+		padding: 14px 16px;
+	}
+	.sec__head {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+	.sec__rename {
+		flex: 1;
+		display: flex;
+		gap: 8px;
+		min-width: 0;
+	}
+	.sec__rename input {
+		flex: 1;
+		min-width: 0;
+		min-height: 38px;
+		padding: 0 10px;
+		border: 1px solid transparent;
+		border-radius: 10px;
+		background: transparent;
+		color: var(--text);
+		font-family: var(--font-serif);
+		font-size: 1.2rem;
+		font-weight: 600;
+	}
+	.sec__rename input:hover,
+	.sec__rename input:focus {
+		border-color: var(--line);
+		background: var(--bg);
+	}
+	.tools {
+		display: flex;
+		gap: 4px;
+	}
+	.icon-btn {
+		appearance: none;
+		width: 34px;
+		height: 34px;
+		border: 1px solid var(--line);
+		border-radius: 10px;
+		background: transparent;
+		color: var(--text);
+		font: inherit;
+		cursor: pointer;
+	}
+	.icon-btn:hover:not(:disabled) {
+		border-color: var(--accent);
+	}
+	.icon-btn:disabled {
+		opacity: 0.3;
+		cursor: default;
+	}
+	.icon-btn--danger:hover {
+		color: #d6336c;
+		border-color: #d6336c;
+	}
+	.btn--sm {
+		min-height: 38px;
+		padding: 0 14px;
+		font-size: 0.875rem;
+	}
+	.btn--danger {
+		color: #d6336c;
+	}
+	.apps {
+		list-style: none;
+		margin: 10px 0 0;
+		padding: 0;
+	}
+	.app {
+		border-top: 1px solid var(--line);
+		padding: 10px 0 6px;
+	}
+	.app[data-policy="hidden"] .app__row {
+		opacity: 0.55;
+	}
+	.app__row {
+		display: grid;
+		grid-template-columns: 40px 1fr auto;
+		align-items: center;
+		gap: 12px;
+	}
+	.app__icon {
+		width: 40px;
+		height: 40px;
+		border-radius: 11px;
+		display: grid;
+		place-items: center;
+		background: var(--surface-2);
+		font-size: 1.25rem;
+	}
+	.app__icon img {
+		width: 26px;
+		height: 26px;
+		object-fit: contain;
+	}
+	.app__info {
+		display: grid;
+		min-width: 0;
+	}
+	.app__url {
+		color: var(--muted);
+		font-size: 0.8rem;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.badges {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px;
+		margin-top: 4px;
+	}
+	.badge {
+		padding: 1px 8px;
+		border-radius: 999px;
+		background: var(--surface-2);
+		color: var(--muted);
+		font-size: 0.72rem;
+		font-weight: 600;
+	}
+	.badge--policy {
+		background: var(--accent-soft);
+		color: var(--text);
+	}
+	.edit > summary,
+	.add > summary {
+		display: inline-flex;
+		align-items: center;
+		min-height: 32px;
+		margin-left: 52px;
+		color: var(--accent);
+		font-size: 0.85rem;
+		font-weight: 600;
+		cursor: pointer;
+		list-style: none;
+	}
+	.edit > summary::-webkit-details-marker,
+	.add > summary::-webkit-details-marker {
+		display: none;
+	}
+	.edit[open] > summary {
+		color: var(--muted);
+	}
+	.add {
+		border-top: 1px solid var(--line);
+		padding-top: 8px;
+	}
+	.add > summary {
+		margin-left: 0;
+	}
+	.edit__form {
+		margin: 8px 0 12px;
+		padding: 14px;
+		border-radius: var(--radius-sm);
+		background: var(--surface-2);
+	}
+	.edit__actions {
+		display: flex;
+		gap: 8px;
+		margin-top: 14px;
+	}
+	.newsec {
+		margin-top: 16px;
+		padding: 14px 16px;
+	}
+	.newsec__label {
+		display: block;
+		font-weight: 600;
+		margin-bottom: 6px;
+	}
+	.newsec__row {
+		display: flex;
+		gap: 8px;
+	}
+	.newsec__row input {
+		flex: 1;
+		min-width: 0;
+		min-height: 38px;
+		padding: 0 12px;
+		border: 1px solid var(--line);
+		border-radius: 10px;
+		background: var(--bg);
+		color: var(--text);
+		font: inherit;
+	}
+	.note {
+		margin: 20px 0 0;
+		color: var(--muted);
+		font-size: 0.85rem;
+	}
+	.note a {
+		color: var(--accent);
+	}
+</style>

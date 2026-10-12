@@ -1,57 +1,94 @@
 ---
 import type { AppView } from "../lib/prefs";
-import type { ServiceSection } from "../lib/services";
-import { resolveIcon } from "../lib/services";
+import type { Service, ServiceSection } from "../lib/services";
+import AppTile from "./AppTile.astro";
 
 interface Props {
 	sections: ServiceSection[];
+	/** Starred apps; with any, the full list folds under "All apps". */
+	favorites?: Service[];
 	view?: AppView;
+	/** Lets admins jump straight to adding apps from the empty state. */
+	isAdmin?: boolean;
 }
-const { sections, view = "auto" } = Astro.props;
+const { sections, favorites = [], view = "auto", isAdmin = false } = Astro.props;
+const total = sections.reduce((n, s) => n + s.services.length, 0);
 ---
 
 {
 	sections.length === 0 ? (
 		<p class="empty card">
-			You're signed in, but no services are shared with your account yet. Ask a family admin to add you to a group.
+			{isAdmin ? (
+				<>No apps yet. <a href="/admin/apps">Add the first one</a>.</>
+			) : (
+				"You're signed in, but no services are shared with your account yet. Ask a family admin to add you to a group."
+			)}
 		</p>
 	) : (
 		<div class="apps" data-view={view}>
-		{sections.map((section) => (
-			<div class="group">
-				{section.title && <h3 class="group__title">{section.title}</h3>}
-				<ul class="grid" role="list">
-					{section.services.map((svc) => {
-						const icon = resolveIcon(svc.icon);
-						return (
+			{favorites.length > 0 && (
+				<div class="group group--fav">
+					<h3 class="group__title">
+						<span aria-hidden="true">★</span> Favorites
+					</h3>
+					<ul class="grid" role="list">
+						{favorites.map((svc) => (
 							<li>
-								<a class="tile" href={svc.url} rel="noopener">
-									<span class="tile__icon" aria-hidden="true">
-										{icon.kind === "img" ? (
-											<img src={icon.value} alt="" width="40" height="40" decoding="async" />
-										) : (
-											icon.value
-										)}
-									</span>
-									<span class="tile__name">{svc.name}</span>
-									{svc.description && <span class="tile__desc">{svc.description}</span>}
-								</a>
+								<AppTile svc={svc} />
 							</li>
-						);
-					})}
-				</ul>
-			</div>
-		))}
+						))}
+					</ul>
+				</div>
+			)}
+			{/* Always a <details>; without favorites it's open and the summary is hidden. */}
+			<details class="all" open={favorites.length === 0} data-foldable={favorites.length > 0 ? "" : undefined}>
+				<summary class="all__toggle">
+					All apps <span class="all__count">{total}</span>
+				</summary>
+				<div class="groups">
+					{sections.map((section) => (
+						<div class="group">
+							{section.title && <h3 class="group__title">{section.title}</h3>}
+							<ul class="grid" role="list">
+								{section.services.map((svc) => (
+									<li>
+										<AppTile svc={svc} />
+									</li>
+								))}
+							</ul>
+						</div>
+					))}
+				</div>
+			</details>
 		</div>
 	)
 }
 
-<style>
-	/* Sized by the space it gets (full column vs. desktop sidebar), not the viewport. */
-	.apps {
-		container-type: inline-size;
+<script>
+	// "All apps" (shown when someone has favorites): open on phones, where the
+	// Apps tab is the whole screen; elsewhere remember what the person chose.
+	const KEY = "hub:all-apps-open";
+	for (const all of document.querySelectorAll<HTMLDetailsElement>("details[data-foldable]")) {
+		let saved: string | null = null;
+		try {
+			saved = localStorage.getItem(KEY);
+		} catch {}
+		all.open = matchMedia("(max-width: 899px)").matches || saved === "1";
+		all.addEventListener("toggle", () => {
+			try {
+				localStorage.setItem(KEY, all.open ? "1" : "0");
+			} catch {}
+		});
 	}
-	.group + .group {
+</script>
+
+<style>
+	/* Sized by the space it gets (sidebar, phone panel, full desktop width), not the viewport. */
+	.apps {
+		container: apps / inline-size;
+	}
+	.group + .group,
+	.group--fav + .all {
 		margin-top: 18px;
 	}
 	.group__title {
@@ -62,6 +99,9 @@ const { sections, view = "auto" } = Astro.props;
 		text-transform: uppercase;
 		color: var(--muted);
 	}
+	.group--fav .group__title span {
+		color: var(--accent);
+	}
 	/* Icon grid, phone-home-screen style (compact, and auto when narrow). */
 	.grid {
 		list-style: none;
@@ -71,143 +111,76 @@ const { sections, view = "auto" } = Astro.props;
 		grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
 		gap: 14px 8px;
 	}
-	.tile {
-		display: grid;
-		justify-items: center;
-		gap: 6px;
-		text-align: center;
-		text-decoration: none;
-		padding: 4px 0;
-		border-radius: var(--radius-sm);
-		-webkit-tap-highlight-color: transparent;
-	}
-	.tile__icon {
-		width: 60px;
-		height: 60px;
-		border-radius: 16px;
-		display: grid;
-		place-items: center;
-		font-size: 1.8rem;
-		background: var(--surface);
-		border: 1px solid var(--line);
-		box-shadow: var(--shadow);
-		transition: transform 0.15s ease;
-	}
-	.tile:active .tile__icon {
-		transform: scale(0.92);
-	}
-	.tile__icon img {
-		width: 38px;
-		height: 38px;
-		object-fit: contain;
-	}
-	.tile__name {
-		max-width: 100%;
-		font-size: 0.75rem;
-		font-weight: 600;
-		line-height: 1.2;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-	.tile__desc {
+	.all:not([data-foldable]) > .all__toggle {
 		display: none;
 	}
-
-	/* Detailed: rows with descriptions, one column, two when there's room. */
-	.apps[data-view="detailed"] .grid {
-		grid-template-columns: repeat(1, minmax(0, 1fr));
-		gap: 10px;
-	}
-	.apps[data-view="detailed"] .tile {
-		grid-template-columns: 44px 1fr;
-		grid-template-rows: auto auto;
-		justify-items: start;
+	.all__toggle {
+		list-style: none;
+		display: inline-flex;
 		align-items: center;
-		column-gap: 12px;
-		row-gap: 0;
-		text-align: left;
-		padding: 10px 12px;
-		background: var(--surface);
+		gap: 8px;
+		min-height: 36px;
+		padding: 0 14px;
 		border: 1px solid var(--line);
+		border-radius: 999px;
+		font-size: 0.875rem;
+		font-weight: 600;
+		cursor: pointer;
 	}
-	.apps[data-view="detailed"] .tile:hover {
+	.all__toggle::-webkit-details-marker {
+		display: none;
+	}
+	.all__toggle::after {
+		content: "▾";
+		font-size: 0.8em;
+		color: var(--muted);
+	}
+	.all[open] > .all__toggle::after {
+		content: "▴";
+	}
+	.all__toggle:hover {
 		border-color: var(--accent);
 	}
-	.apps[data-view="detailed"] .tile__icon {
-		grid-row: span 2;
-		width: 44px;
-		height: 44px;
-		border-radius: 12px;
-		box-shadow: none;
-		background: var(--surface-2);
-		border: 0;
-	}
-	.apps[data-view="detailed"] .tile__icon img {
-		width: 30px;
-		height: 30px;
-	}
-	.apps[data-view="detailed"] .tile__name {
-		font-size: 0.95rem;
-		align-self: end;
-		white-space: normal;
-	}
-	.apps[data-view="detailed"] .tile__desc {
-		display: block;
-		font-size: 0.8rem;
+	.all__count {
 		color: var(--muted);
-		align-self: start;
+		font-weight: 500;
 	}
-	@container (min-width: 520px) {
-		.apps[data-view="detailed"] .grid {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-		}
+	.all[data-foldable][open] > .groups {
+		margin-top: 16px;
 	}
 
-	/* Auto: icons when narrow, the detailed rows when wide. */
-	@container (min-width: 520px) {
+	/* Detailed: rows with descriptions, as many columns as fit. */
+	.apps[data-view="detailed"] .grid {
+		grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+		gap: 10px;
+	}
+	@container apps (min-width: 520px) and (max-width: 899px) {
 		.apps[data-view="auto"] .grid {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
 			gap: 10px;
 		}
-		.apps[data-view="auto"] .tile {
-			grid-template-columns: 44px 1fr;
-			grid-template-rows: auto auto;
-			justify-items: start;
-			align-items: center;
-			column-gap: 12px;
-			row-gap: 0;
-			text-align: left;
-			padding: 10px 12px;
-			background: var(--surface);
-			border: 1px solid var(--line);
+	}
+
+	/*
+	 * Full desktop width (the strip above the feed): icon sections sit side by
+	 * side and wrap, so a few apps take one short row and many stay compact.
+	 */
+	@container apps (min-width: 900px) {
+		.apps:not([data-view="detailed"]) .groups {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 20px 44px;
 		}
-		.apps[data-view="auto"] .tile:hover {
-			border-color: var(--accent);
+		.apps:not([data-view="detailed"]) .group + .group {
+			margin-top: 0;
 		}
-		.apps[data-view="auto"] .tile__icon {
-			grid-row: span 2;
-			width: 44px;
-			height: 44px;
-			border-radius: 12px;
-			box-shadow: none;
-			background: var(--surface-2);
-			border: 0;
+		.apps:not([data-view="detailed"]) .grid {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 12px 6px;
 		}
-		.apps[data-view="auto"] .tile__icon img {
-			width: 30px;
-			height: 30px;
-		}
-		.apps[data-view="auto"] .tile__name {
-			font-size: 0.95rem;
-			align-self: end;
-			white-space: normal;
-		}
-		.apps[data-view="auto"] .tile__desc {
-			display: block;
-			font-size: 0.8rem;
-			color: var(--muted);
-			align-self: start;
+		.apps:not([data-view="detailed"]) .grid > li {
+			width: 84px;
 		}
 	}
 

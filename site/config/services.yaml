@@ -15,12 +15,12 @@ sections:
       - name: Jellyfin
         url: https://jellyfin.example.com
         icon: jellyfin
-        description: Movies & TV
+        description: Our movies & TV, in place of Netflix, Disney+ & Max
         groups: [family, extended-family]
       - name: Audiobookshelf
         url: https://bookshelf.example.com
         icon: audiobookshelf
-        description: Audiobooks & podcasts
+        description: Audiobooks & podcasts, in place of Audible & Spotify
         groups: [family, extended-family]
 
   - title: Photos & food
@@ -28,12 +28,12 @@ sections:
       - name: Immich
         url: https://photos.example.com
         icon: immich
-        description: Family photo library
+        description: Family photo backup, in place of Google & iCloud Photos
         groups: [family]
       - name: Mealie
         url: https://shopping.example.com
         icon: mealie
-        description: Recipes & shopping list
+        description: Recipes, meal plans & shopping lists, in place of Paprika & AnyList
         groups: [family]
 
   - title: Requests & home
@@ -41,12 +41,12 @@ sections:
       - name: Requests
         url: https://requests.example.com
         icon: jellyseerr
-        description: Request a movie or show
+        description: Ask for a movie or show to be added to Jellyfin (Jellyseerr)
         groups: [family, extended-family]
       - name: Home Assistant
         url: https://ha.example.com
         icon: home-assistant
-        description: Lights, locks & cameras
+        description: Lights, locks & cameras, in place of Google Home, Alexa & Ring
         groups: [family]
 
   - title: Admin
@@ -54,5 +54,5 @@ sections:
       - name: Write a post
         url: /_emdash/admin
         icon: ✍️
-        description: Share news & photos
+        description: Post news & photos to the family feed, in place of Facebook
         groups: [manage-social, family, extended-family]

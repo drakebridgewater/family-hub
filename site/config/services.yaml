@@ -1,67 +1,216 @@
-# Family Hub service launcher: the starting app list.
-# Edited live: the site re-reads this file on change (no restart needed),
-# until an admin first saves on /admin/apps. From then on the list lives in
-# the database and this file is ignored.
+# Family Hub service launcher.
+# Edited live: the site re-reads this file on change (no restart needed).
 #
 #   icon:   a dashboard-icons slug (https://dashboardicons.com), a full image URL, or an emoji
 #   ios / android: optional App Store / Google Play links to the app's own phone app,
 #           shown as a "Get app" button on phones
 #   groups: lldap/Authelia groups that may SEE the tile. Omit = every signed-in user.
-#   policy: optional (default; people can hide it) | always (can't be hidden) | hidden (off for everyone)
 #           (Hiding a tile is not security; each service still needs its own
 #           Authelia access_control rule.)
 
 sections:
   - title: Watch & listen
     services:
-      - name: Jellyfin
+      - name: Streaming
         url: https://jellyfin.bridgewater.digital
         icon: jellyfin
-        description: Our movies & TV, in place of Netflix, Disney+ & Max
+        description: Movies & TV
         ios: https://apps.apple.com/app/id1480192618
         android: https://play.google.com/store/apps/details?id=org.jellyfin.mobile
         groups: [family, extended-family]
-      - name: Audiobookshelf
+      - name: Audiobook
         url: https://bookshelf.bridgewater.digital
         icon: audiobookshelf
-        description: Audiobooks & podcasts, in place of Audible & Spotify
+        description: Audiobooks & podcasts
         android: https://play.google.com/store/apps/details?id=com.audiobookshelf.app
         groups: [family, extended-family]
+      - name: Music
+        url: https://navidrome.bridgewater.digital
+        icon: navidrome
+        description: Music streaming
 
-  - title: Photos & food
+  - title: Requests
     services:
-      - name: Immich
-        url: https://photos.bridgewater.digital
-        icon: immich
-        description: Family photo backup, in place of Google & iCloud Photos
-        ios: https://apps.apple.com/app/id1613945652
-        android: https://play.google.com/store/apps/details?id=app.alextran.immich
-        groups: [family]
-      - name: Mealie
-        url: https://shopping.bridgewater.digital
-        icon: mealie
-        description: Recipes, meal plans & shopping lists, in place of Paprika & AnyList
-        groups: [family]
-
-  - title: Requests & home
-    services:
-      - name: Requests
+      - name: TV & Movie Requests
         url: https://requests.bridgewater.digital
         icon: jellyseerr
-        description: Ask for a movie or show to be added to Jellyfin (Jellyseerr)
+        description: Request a movie or show
         groups: [family, extended-family]
+      - name: Audible import
+        url: https://audible.bridgewater.digital
+        icon: 🎧
+        description: Send Audible books to Audiobookshelf
+        groups: [audible-import]
+      - name: Spotify Import
+        url: https://navispot.bridgewater.digital/
+        icon: 🎼
+        description: Add Spotify Playlists to Navidrome
+        groups: [admins]
+
+
+  - title: Home
+    services:
       - name: Home Assistant
         url: https://ha.bridgewater.digital
         icon: home-assistant
-        description: Lights, locks & cameras, in place of Google Home, Alexa & Ring
+        description: Lights, locks & cameras
         ios: https://apps.apple.com/app/id1099568401
         android: https://play.google.com/store/apps/details?id=io.homeassistant.companion.android
+        groups: [family]
+      - name: Music Assistant
+        url: https://music.bridgewater.digital
+        icon: music-assistant
+        description: Play music on the house speakers
+        groups: [family]
+      - name: Frigate
+        url: https://frigate.bridgewater.digital
+        icon: frigate
+        description: NVR built around real-time AI object detection
+        groups: [admins]
+
+      - name: zigbee
+        url: https://zigbee.bridgewater.digital/
+        icon: zigbee2mqtt
+        groups: [admins]
+      - name: zwave
+        url: https://zwave.bridgewater.digital/
+        icon: zwavejs2mqtt
+        groups: [admins]
+      - name: Plant Manager
+        url: https://plants.bridgewater.digital/
+        icon: hortusfox
+        description: Plant manager system that you can use to manage, keep track and journal your home plants.
+        groups: [admins]
+
+  - title: Photos & food
+    services:
+      - name: Photos
+        url: https://photos.bridgewater.digital
+        icon: immich
+        description: Family photo library (Google Photos)
+        ios: https://apps.apple.com/app/id1613945652
+        android: https://play.google.com/store/apps/details?id=app.alextran.immich
+        groups: [family]
+      - name: Shopping
+        url: https://shopping.bridgewater.digital
+        icon: mealie
+        description: Recipes & shopping list
+        groups: [family]
+      - name: sparky-fitness
+        url: https://fitness.bridgewater.digital/
+        icon: 🏃
+        groups: [admins]
+
+  - title: Share & organize
+    services:
+      - name: Password Manager
+        url: https://vault.bridgewater.digital
+        icon: vaultwarden
+        description: Password manager
+        ios: https://apps.apple.com/app/id1137397744
+        android: https://play.google.com/store/apps/details?id=com.x8bit.bitwarden
+      - name: Event Invites
+        url: https://events.bridgewater.digital
+        icon: 🌵
+        description: (Partiful replacement) RSVP platform that lets you create events, share unique URLs, and collect RSVPs without any registration required.
+      - name: Event Photos
+        url: https://photoshare.bridgewater.digital/
+        icon: 📷
+        description: A place for guests to view and share pictures of your big event
+        groups: [family]
+      - name: Trip Planning
+        url: https://trek.bridgewater.digital/
+        icon: 🧳
+        description: Plan trips collaboratively with interactive maps, budgets, and real-time sync.
+        groups: [admins]
+
+      - name: Contact
+        url: https://monica.bridgewater.digital/
+        icon: monica
+        description: Monica helps you keep track of the people in your life—the things they tell you, the moments you share, and the promises you definitely intended to remember.
+        groups: [admins]
+        
+      - name: Shared Files
+        url: https://drop.bridgewater.digital
+        icon: 📤
+        description: Drop files to share
+      - name: Shared Notes
+        url: https://pad.bridgewater.digital
+        icon: dumbpad
+        description: Shared notepads
+      - name: Car Log
+        url: https://car.bridgewater.digital
+        icon: lubelogger
+        description: Car maintenance & fuel log
         groups: [family]
 
   - title: Admin
     services:
-      - name: Write a post
-        url: /_emdash/admin
-        icon: ✍️
-        description: Post news & photos to the family feed, in place of Facebook
-        groups: [manage-social, family, extended-family]
+      - name: Invite New Users
+        url: https://invite.bridgewater.digital
+        icon: 💌
+        description: Invite new users to LDAP and associated services
+        groups: [admins]
+      - name: Manage Users
+        url: https://authelia-admin.bridgewater.digital
+        icon: 👤
+        description: Authelia Admin UI to manage users and groups
+        groups: [admins]
+      - name: Docker
+        url: https://docker.bridgewater.digital
+        icon: docker
+        description: Authelia Admin UI to manage users and groups
+        groups: [admins]
+      
+      - name: VS Code
+        url: https://code.bridgewater.digital
+        icon: vscode
+        description: 
+        groups: [admins]
+      
+      - name: Backups
+        url: https://backrest.bridgewater.digital/
+        icon: backrest
+        description: 
+        groups: [admins]
+     
+
+  - title: Download Management
+    services:
+      - name: Sonarr
+        icon: sonarr
+        url: https://sonarr.bridgewater.digital
+        groups: [admins]
+      - name: Radarr
+        icon: radarr
+        url: https://radarr.bridgewater.digital
+        groups: [admins]
+      - name: Lidarr
+        icon: lidarr
+        url: https://lidarr.bridgewater.digital
+        groups: [admins]
+      - name: Prowlarr
+        icon: prowlarr
+        url: https://prowlarr.bridgewater.digital
+        groups: [admins]
+      - name: Lazylibrarian
+        icon: lazylibrarian
+        url: https://lazylibrarian.bridgewater.digital
+        groups: [admins]
+      - name: sabnzbd
+        icon: sabnzbd
+        url: https://sabnzbd.bridgewater.digital
+        groups: [admins]
+
+      - name: transmission
+        url: https://transmission.bridgewater.digital/
+        icon: transmission
+        groups: [admins]
+      - name: stremio
+        url: https://stremio.bridgewater.digital/
+        icon: stremio
+        groups: [admins]
+      - name: slskd
+        url: https://slskd.bridgewater.digital/
+        icon: slskd
+        groups: [admins]

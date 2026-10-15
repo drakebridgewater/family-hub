@@ -1,10 +1,13 @@
-# Family Hub service launcher.
-# Edited live: the site re-reads this file on change (no restart needed).
+# Family Hub service launcher: the starting app list.
+# Edited live: the site re-reads this file on change (no restart needed),
+# until an admin first saves on /admin/apps. From then on the list lives in
+# the database and this file is ignored.
 #
 #   icon:   a dashboard-icons slug (https://dashboardicons.com), a full image URL, or an emoji
 #   ios / android: optional App Store / Google Play links to the app's own phone app,
 #           shown as a "Get app" button on phones
 #   groups: lldap/Authelia groups that may SEE the tile. Omit = every signed-in user.
+#   policy: optional (default; people can hide it) | always (can't be hidden) | hidden (off for everyone)
 #           (Hiding a tile is not security; each service still needs its own
 #           Authelia access_control rule.)
 

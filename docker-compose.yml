@@ -83,7 +83,6 @@ services:
       homepage.siteMonitor: http://family-hub:4321
 
       # ---------------- Unraid UI ----------------
-      net.unraid.docker.managed: composeman
       net.unraid.docker.webui: https://${SITE_HOST}/_emdash/admin
       net.unraid.docker.icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/astro.png
 

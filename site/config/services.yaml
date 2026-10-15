@@ -4,6 +4,8 @@
 # the database and this file is ignored.
 #
 #   icon:   a dashboard-icons slug (https://dashboardicons.com), a full image URL, or an emoji
+#   ios / android: optional App Store / Google Play links to the app's own phone app,
+#           shown as a "Get app" button on phones
 #   groups: lldap/Authelia groups that may SEE the tile. Omit = every signed-in user.
 #   policy: optional (default; people can hide it) | always (can't be hidden) | hidden (off for everyone)
 #           (Hiding a tile is not security; each service still needs its own
@@ -16,11 +18,14 @@ sections:
         url: https://jellyfin.bridgewater.digital
         icon: jellyfin
         description: Our movies & TV, in place of Netflix, Disney+ & Max
+        ios: https://apps.apple.com/app/id1480192618
+        android: https://play.google.com/store/apps/details?id=org.jellyfin.mobile
         groups: [family, extended-family]
       - name: Audiobookshelf
         url: https://bookshelf.bridgewater.digital
         icon: audiobookshelf
         description: Audiobooks & podcasts, in place of Audible & Spotify
+        android: https://play.google.com/store/apps/details?id=com.audiobookshelf.app
         groups: [family, extended-family]
 
   - title: Photos & food
@@ -29,6 +34,8 @@ sections:
         url: https://photos.bridgewater.digital
         icon: immich
         description: Family photo backup, in place of Google & iCloud Photos
+        ios: https://apps.apple.com/app/id1613945652
+        android: https://play.google.com/store/apps/details?id=app.alextran.immich
         groups: [family]
       - name: Mealie
         url: https://shopping.bridgewater.digital
@@ -47,6 +54,8 @@ sections:
         url: https://ha.bridgewater.digital
         icon: home-assistant
         description: Lights, locks & cameras, in place of Google Home, Alexa & Ring
+        ios: https://apps.apple.com/app/id1099568401
+        android: https://play.google.com/store/apps/details?id=io.homeassistant.companion.android
         groups: [family]
 
   - title: Admin

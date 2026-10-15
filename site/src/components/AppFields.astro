@@ -59,6 +59,30 @@ const policies = [
 		<input name="description" maxlength="120" value={svc?.description} placeholder="Movies & TV" autocomplete="off" />
 	</label>
 	<fieldset class="field">
+		<legend class="field__label">Phone app <span class="field__opt">optional</span></legend>
+		<input
+			name="ios"
+			maxlength="500"
+			value={svc?.ios}
+			placeholder="App Store link: https://apps.apple.com/app/…"
+			pattern="https://.+"
+			title="An https:// App Store link"
+			aria-label="App Store link"
+			autocomplete="off"
+		/>
+		<input
+			name="android"
+			maxlength="500"
+			value={svc?.android}
+			placeholder="Google Play link: https://play.google.com/store/apps/details?id=…"
+			pattern="https://.+"
+			title="An https:// Google Play link"
+			aria-label="Google Play link"
+			autocomplete="off"
+		/>
+		<span class="field__hint">Offered as a "Get app" button on phones (each person can change this on Customize home).</span>
+	</fieldset>
+	<fieldset class="field">
 		<legend class="field__label">Who sees it</legend>
 		<div class="checks">
 			{

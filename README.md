@@ -53,6 +53,9 @@ forged header just gets the public view.
   **Hidden** from everyone. Until the first change there, apps come from `config/services.yaml`; that first save copies
   them into Postgres and the file is no longer read. Icons: a [dashboard-icons](https://dashboardicons.com) name (guessed
   from the app name), an image URL, or an emoji.
+- **Phone apps:** give an app an App Store and/or Google Play link on *Manage apps* (`ios:` / `android:` in
+  `services.yaml`) and its tile gets a "Get app" button. Each person picks under *Customize home → Apps*: **Automatic**
+  (default; the button for their phone's OS, none on computers), **Android**, **iPhone & iPad**, or **Off**.
 - **Finding apps:** press `/` or ⌘K / Ctrl+K on any page (or the ▦ button in the header) to search apps. Each person
   can star favorites on *Customize home*; the rest then fold under "All apps".
 - **Passwords & 2FA:** *Password & security* in the account menu opens Authelia's settings page (changing a password

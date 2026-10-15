@@ -1,58 +1,205 @@
-# Family Hub service launcher: the starting app list.
-# Edited live: the site re-reads this file on change (no restart needed),
-# until an admin first saves on /admin/apps. From then on the list lives in
-# the database and this file is ignored.
+# Family Hub service launcher.
+# Edited live: the site re-reads this file on change (no restart needed).
 #
 #   icon:   a dashboard-icons slug (https://dashboardicons.com), a full image URL, or an emoji
 #   groups: lldap/Authelia groups that may SEE the tile. Omit = every signed-in user.
-#   policy: optional (default; people can hide it) | always (can't be hidden) | hidden (off for everyone)
 #           (Hiding a tile is not security; each service still needs its own
 #           Authelia access_control rule.)
 
 sections:
   - title: Watch & listen
     services:
-      - name: Jellyfin
+      - name: Streaming
         url: https://jellyfin.example.com
         icon: jellyfin
-        description: Our movies & TV, in place of Netflix, Disney+ & Max
+        description: Movies & TV
         groups: [family, extended-family]
-      - name: Audiobookshelf
+      - name: Audiobook
         url: https://bookshelf.example.com
         icon: audiobookshelf
-        description: Audiobooks & podcasts, in place of Audible & Spotify
+        description: Audiobooks & podcasts
         groups: [family, extended-family]
+      - name: Music
+        url: https://navidrome.example.com
+        icon: navidrome
+        description: Music streaming
 
-  - title: Photos & food
+  - title: Requests
     services:
-      - name: Immich
-        url: https://photos.example.com
-        icon: immich
-        description: Family photo backup, in place of Google & iCloud Photos
-        groups: [family]
-      - name: Mealie
-        url: https://shopping.example.com
-        icon: mealie
-        description: Recipes, meal plans & shopping lists, in place of Paprika & AnyList
-        groups: [family]
-
-  - title: Requests & home
-    services:
-      - name: Requests
+      - name: TV & Movie Requests
         url: https://requests.example.com
         icon: jellyseerr
-        description: Ask for a movie or show to be added to Jellyfin (Jellyseerr)
+        description: Request a movie or show
         groups: [family, extended-family]
+      - name: Audible import
+        url: https://audible.example.com
+        icon: 🎧
+        description: Send Audible books to Audiobookshelf
+        groups: [audible-import]
+      - name: Spotify Import
+        url: https://navispot.example.com/
+        icon: 🎼
+        description: Add Spotify Playlists to Navidrome
+        groups: [admins]
+
+
+  - title: Home
+    services:
       - name: Home Assistant
         url: https://ha.example.com
         icon: home-assistant
-        description: Lights, locks & cameras, in place of Google Home, Alexa & Ring
+        description: Lights, locks & cameras
+        groups: [family]
+      - name: Music Assistant
+        url: https://music.example.com
+        icon: music-assistant
+        description: Play music on the house speakers
+        groups: [family]
+      - name: Frigate
+        url: https://frigate.example.com
+        icon: frigate
+        description: NVR built around real-time AI object detection
+        groups: [admins]
+
+      - name: zigbee
+        url: https://zigbee.example.com/
+        icon: zigbee2mqtt
+        groups: [admins]
+      - name: zwave
+        url: https://zwave.example.com/
+        icon: zwavejs2mqtt
+        groups: [admins]
+      - name: Plant Manager
+        url: https://plants.example.com/
+        icon: hortusfox
+        description: Plant manager system that you can use to manage, keep track and journal your home plants.
+        groups: [admins]
+
+  - title: Photos & food
+    services:
+      - name: Photos
+        url: https://photos.example.com
+        icon: immich
+        description: Family photo library (Google Photos)
+        groups: [family]
+      - name: Shopping
+        url: https://shopping.example.com
+        icon: mealie
+        description: Recipes & shopping list
+        groups: [family]
+      - name: sparky-fitness
+        url: https://fitness.example.com/
+        icon: 🏃
+        groups: [admins]
+
+  - title: Share & organize
+    services:
+      - name: Password Manager
+        url: https://vault.example.com
+        icon: vaultwarden
+        description: Password manager
+      - name: Event Invites
+        url: https://events.example.com
+        icon: 🌵
+        description: (Partiful replacement) RSVP platform that lets you create events, share unique URLs, and collect RSVPs without any registration required.
+      - name: Event Photos
+        url: https://photoshare.example.com/
+        icon: 📷
+        description: A place for guests to view and share pictures of your big event
+        groups: [family]
+      - name: Trip Planning
+        url: https://trek.example.com/
+        icon: 🧳
+        description: Plan trips collaboratively with interactive maps, budgets, and real-time sync.
+        groups: [admins]
+
+      - name: Contact
+        url: https://monica.example.com/
+        icon: monica
+        description: Monica helps you keep track of the people in your life—the things they tell you, the moments you share, and the promises you definitely intended to remember.
+        groups: [admins]
+        
+      - name: Shared Files
+        url: https://drop.example.com
+        icon: 📤
+        description: Drop files to share
+      - name: Shared Notes
+        url: https://pad.example.com
+        icon: dumbpad
+        description: Shared notepads
+      - name: Car Log
+        url: https://car.example.com
+        icon: lubelogger
+        description: Car maintenance & fuel log
         groups: [family]
 
   - title: Admin
     services:
-      - name: Write a post
-        url: /_emdash/admin
-        icon: ✍️
-        description: Post news & photos to the family feed, in place of Facebook
-        groups: [manage-social, family, extended-family]
+      - name: Invite New Users
+        url: https://invite.example.com
+        icon: 💌
+        description: Invite new users to LDAP and associated services
+        groups: [admins]
+      - name: Manage Users
+        url: https://authelia-admin.example.com
+        icon: 👤
+        description: Authelia Admin UI to manage users and groups
+        groups: [admins]
+      - name: Docker
+        url: https://docker.example.com
+        icon: docker
+        description: Authelia Admin UI to manage users and groups
+        groups: [admins]
+      
+      - name: VS Code
+        url: https://code.example.com
+        icon: vscode
+        description: 
+        groups: [admins]
+      
+      - name: Backups
+        url: https://backrest.example.com/
+        icon: backrest
+        description: 
+        groups: [admins]
+     
+
+  - title: Download Management
+    services:
+      - name: Sonarr
+        icon: sonarr
+        url: https://sonarr.example.com
+        groups: [admins]
+      - name: Radarr
+        icon: radarr
+        url: https://radarr.example.com
+        groups: [admins]
+      - name: Lidarr
+        icon: lidarr
+        url: https://lidarr.example.com
+        groups: [admins]
+      - name: Prowlarr
+        icon: prowlarr
+        url: https://prowlarr.example.com
+        groups: [admins]
+      - name: Lazylibrarian
+        icon: lazylibrarian
+        url: https://lazylibrarian.example.com
+        groups: [admins]
+      - name: sabnzbd
+        icon: sabnzbd
+        url: https://sabnzbd.example.com
+        groups: [admins]
+
+      - name: transmission
+        url: https://transmission.example.com/
+        icon: transmission
+        groups: [admins]
+      - name: stremio
+        url: https://stremio.example.com/
+        icon: stremio
+        groups: [admins]
+      - name: slskd
+        url: https://slskd.example.com/
+        icon: slskd
+        groups: [admins]

@@ -30,6 +30,9 @@ export interface Service {
 	url: string;
 	icon?: string;
 	description?: string;
+	/** App Store / Google Play pages for the app's own phone app, offered on phones. */
+	ios?: string;
+	android?: string;
 	/** Authelia groups that may see this tile. Omit/empty = every signed-in user. */
 	groups?: string[];
 	policy: AppPolicy;
@@ -81,6 +84,12 @@ export function parseGroups(raw: unknown): string[] {
 
 const clip = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 
+/** A phone-app store link: https only (no same-site paths). */
+const storeUrl = (raw: unknown) => {
+	const url = safeUrl(clip(raw, 500));
+	return url?.startsWith("https://") ? url : null;
+};
+
 /** Cleans one service from YAML, the database or an admin form. Null if unusable. */
 export function normalizeService(raw: any, fallbackId: string): Service | null {
 	const name = clip(raw?.name, 60);
@@ -89,12 +98,16 @@ export function normalizeService(raw: any, fallbackId: string): Service | null {
 	const icon = clip(raw.icon, 300);
 	const description = clip(raw.description, 120);
 	const groups = parseGroups(raw.groups);
+	const ios = storeUrl(raw.ios);
+	const android = storeUrl(raw.android);
 	return {
 		id: clip(raw.id, 40) || fallbackId,
 		name,
 		url,
 		...(icon && { icon }),
 		...(description && { description }),
+		...(ios && { ios }),
+		...(android && { android }),
 		...(groups.length && { groups }),
 		policy: APP_POLICIES.includes(raw.policy) ? raw.policy : "optional",
 	};

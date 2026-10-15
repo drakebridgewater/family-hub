@@ -107,7 +107,7 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 						)}
 					</span>
 				</div>
-				<ServiceGrid sections={launcher.sections} favorites={launcher.favorites} view={prefs.appView} isAdmin={isAdmin} />
+				<ServiceGrid sections={launcher.sections} favorites={launcher.favorites} view={prefs.appView} mobileApps={prefs.mobileApps} isAdmin={isAdmin} />
 			</section>
 		)
 	}

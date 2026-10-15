@@ -54,6 +54,8 @@ if (Astro.request.method === "POST") {
 				url: get("url"),
 				icon: get("icon"),
 				description: get("description"),
+				ios: get("ios"),
+				android: get("android"),
 				groups: [...form.getAll("groups").map(String), ...parseGroups(get("otherGroups"))],
 				policy: get("policy"),
 			},

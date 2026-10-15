@@ -24,7 +24,11 @@ const user = await getFamilyUser(Astro.request);
 if (!user) return Astro.redirect("/login", 302);
 Astro.response.headers.set("Cache-Control", "private, no-store");
 if (!isAppAdmin(user)) {
-	return new Response(`Only members of ${ADMIN_GROUPS.join(" or ")} can manage apps.`, { status: 403 });
+	return new Response(
+		`Only members of ${ADMIN_GROUPS.join(" or ")} can manage apps. You're signed in as ${user.username}, ` +
+			`in: ${user.groups.join(", ") || "no groups"}. Add yourself to one of those groups, or set ADMIN_GROUPS.`,
+		{ status: 403, headers: { "Content-Type": "text/plain; charset=utf-8" } },
+	);
 }
 
 if (Astro.request.method === "POST") {

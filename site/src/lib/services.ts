@@ -1,7 +1,7 @@
 /**
  * The app launcher's catalog: sections of services (tiles).
  *
- * Admins (ADMIN_GROUPS, default "admin") edit it at /admin/apps, which stores
+ * Admins (ADMIN_GROUPS, default "admin,admins") edit it at /admin/apps, which stores
  * it in Postgres. Until the first save there, it's read from
  * config/services.yaml (a volume on Unraid), re-read whenever that file changes.
  *
@@ -51,7 +51,7 @@ export interface Catalog {
 }
 
 const CONFIG_FILE = path.join(process.env.CONFIG_DIR ?? "./config", "services.yaml");
-export const ADMIN_GROUPS = (process.env.ADMIN_GROUPS ?? "admin")
+export const ADMIN_GROUPS = (process.env.ADMIN_GROUPS ?? "admin,admins")
 	.split(",")
 	.map((g) => g.trim())
 	.filter(Boolean);

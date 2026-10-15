@@ -35,7 +35,7 @@ services:
       AUTHELIA_SESSION_COOKIE: ${AUTHELIA_SESSION_COOKIE:-authelia_session}
       ACCOUNT_SECURITY_URL: ${ACCOUNT_SECURITY_URL:-}
       # Groups that can manage the app list for everyone at /admin/apps
-      ADMIN_GROUPS: ${ADMIN_GROUPS:-admin}
+      ADMIN_GROUPS: ${ADMIN_GROUPS:-admin,admins}
       # --- Schedule ---
       CALENDAR_FEEDS: ${CALENDAR_FEEDS:-}
       SCHEDULE_VISIBILITY: ${SCHEDULE_VISIBILITY:-members}

@@ -48,7 +48,7 @@ forged header just gets the public view.
 - **Family-only post:** turn on *Family only* when writing it. Visitors who aren't signed in won't see it in the feed,
   and its link shows a sign-in prompt instead. (Existing installs: add a Boolean field `members_only` to Posts once,
   under Content types.) Photos in it are still reachable by their direct URL.
-- **Add or remove apps:** members of the `admin` group (set `ADMIN_GROUPS` to change it) use *Manage apps* in the
+- **Add or remove apps:** members of the `admin` or `admins` group (set `ADMIN_GROUPS` to change it) use *Manage apps* in the
   account menu (`/admin/apps`). Each app can be **Shown** (people may hide it for themselves), **Always shown**, or
   **Hidden** from everyone. Until the first change there, apps come from `config/services.yaml`; that first save copies
   them into Postgres and the file is no longer read. Icons: a [dashboard-icons](https://dashboardicons.com) name (guessed

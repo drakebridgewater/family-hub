@@ -1,8 +1,13 @@
-# Family Hub service launcher.
-# Edited live: the site re-reads this file on change (no restart needed).
+# Family Hub service launcher: the starting app list.
+# Edited live: the site re-reads this file on change (no restart needed),
+# until an admin first saves on /admin/apps. From then on the list lives in
+# the database and this file is ignored.
 #
 #   icon:   a dashboard-icons slug (https://dashboardicons.com), a full image URL, or an emoji
+#   ios / android: optional App Store / Google Play links to the app's own phone app,
+#           shown as a "Get app" button on phones
 #   groups: lldap/Authelia groups that may SEE the tile. Omit = every signed-in user.
+#   policy: optional (default; people can hide it) | always (can't be hidden) | hidden (off for everyone)
 #           (Hiding a tile is not security; each service still needs its own
 #           Authelia access_control rule.)
 
@@ -13,11 +18,14 @@ sections:
         url: https://jellyfin.example.com
         icon: jellyfin
         description: Movies & TV
+        ios: https://apps.apple.com/app/id1480192618
+        android: https://play.google.com/store/apps/details?id=org.jellyfin.mobile
         groups: [family, extended-family]
       - name: Audiobook
         url: https://bookshelf.example.com
         icon: audiobookshelf
         description: Audiobooks & podcasts
+        android: https://play.google.com/store/apps/details?id=com.audiobookshelf.app
         groups: [family, extended-family]
       - name: Music
         url: https://navidrome.example.com
@@ -49,6 +57,8 @@ sections:
         url: https://ha.example.com
         icon: home-assistant
         description: Lights, locks & cameras
+        ios: https://apps.apple.com/app/id1099568401
+        android: https://play.google.com/store/apps/details?id=io.homeassistant.companion.android
         groups: [family]
       - name: Music Assistant
         url: https://music.example.com
@@ -81,6 +91,8 @@ sections:
         url: https://photos.example.com
         icon: immich
         description: Family photo library (Google Photos)
+        ios: https://apps.apple.com/app/id1613945652
+        android: https://play.google.com/store/apps/details?id=app.alextran.immich
         groups: [family]
       - name: Shopping
         url: https://shopping.example.com
@@ -98,6 +110,8 @@ sections:
         url: https://vault.example.com
         icon: vaultwarden
         description: Password manager
+        ios: https://apps.apple.com/app/id1137397744
+        android: https://play.google.com/store/apps/details?id=com.x8bit.bitwarden
       - name: Event Invites
         url: https://events.example.com
         icon: 🌵

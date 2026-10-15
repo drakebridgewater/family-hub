@@ -1,12 +1,21 @@
 ---
+import type { MobileApps } from "../lib/prefs";
 import type { Service } from "../lib/services";
 import { resolveIcon } from "../lib/services";
 
 interface Props {
 	svc: Service;
+	/** Which phone-app store buttons to offer; "auto" ones start hidden until ServiceGrid detects the OS. */
+	mobileApps?: MobileApps;
 }
-const { svc } = Astro.props;
+const { svc, mobileApps = "auto" } = Astro.props;
 const icon = resolveIcon(svc.icon);
+const stores = (
+	[
+		{ os: "ios", url: svc.ios, where: "the App Store" },
+		{ os: "android", url: svc.android, where: "Google Play" },
+	] as const
+).filter((s) => s.url && (mobileApps === "auto" || mobileApps === s.os));
 ---
 
 <a class="tile" href={svc.url} rel="noopener" title={svc.description}>
@@ -16,6 +25,21 @@ const icon = resolveIcon(svc.icon);
 	<span class="tile__name">{svc.name}</span>
 	{svc.description && <span class="tile__desc">{svc.description}</span>}
 </a>
+{
+	stores.map((s) => (
+		<a
+			class="store"
+			data-os={s.os}
+			href={s.url}
+			rel="noopener"
+			hidden={mobileApps === "auto"}
+			title={`Get ${svc.name} from ${s.where}`}
+			aria-label={`Get the ${svc.name} app from ${s.where}`}
+		>
+			<span aria-hidden="true">↓</span> Get app
+		</a>
+	))
+}
 
 <style>
 	/* Laid out by the .apps container in ServiceGrid (data-view + its width). */
@@ -63,6 +87,50 @@ const icon = resolveIcon(svc.icon);
 	}
 	.tile__desc {
 		display: none;
+	}
+
+	/* Phone-app store button, under the icon (or at the right of a detailed row). */
+	.store {
+		align-self: center;
+		display: inline-flex;
+		align-items: center;
+		gap: 3px;
+		min-height: 26px;
+		padding: 0 9px;
+		border: 1px solid var(--line);
+		border-radius: 999px;
+		background: var(--surface-2);
+		color: var(--text);
+		font-size: 0.7rem;
+		font-weight: 600;
+		text-decoration: none;
+		white-space: nowrap;
+	}
+	.store[hidden] {
+		display: none;
+	}
+	.store:hover {
+		border-color: var(--accent);
+	}
+	.store span {
+		color: var(--accent);
+	}
+	:global(.apps .grid > li:has(> .store:not([hidden]))) {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	:global(.apps[data-view="detailed"] .grid > li) {
+		position: relative;
+	}
+	:global(.apps[data-view="detailed"] .grid > li > .store) {
+		position: absolute;
+		top: 8px;
+		right: 8px;
+		min-height: 22px;
+	}
+	:global(.apps[data-view="detailed"] .grid > li:has(> .store:not([hidden])) .tile__name) {
+		padding-right: 76px;
 	}
 
 	/* Detailed rows: always for "detailed"; for "auto" at in-between widths (tablet apps tab). */
@@ -144,6 +212,18 @@ const icon = resolveIcon(svc.icon);
 			font-size: 0.8rem;
 			color: var(--muted);
 			align-self: start;
+		}
+		:global(.apps[data-view="auto"] .grid > li) {
+			position: relative;
+		}
+		:global(.apps[data-view="auto"] .grid > li > .store) {
+			position: absolute;
+			top: 8px;
+			right: 8px;
+			min-height: 22px;
+		}
+		:global(.apps[data-view="auto"] .grid > li:has(> .store:not([hidden])) .tile__name) {
+			padding-right: 76px;
 		}
 	}
 </style>

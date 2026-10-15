@@ -7,6 +7,8 @@ import { ensureTable, pool } from "./db";
 export type HomeTab = "feed" | "schedule" | "apps";
 /** auto = icons in narrow spaces (phone, desktop sidebar), list with descriptions when wide. */
 export type AppView = "auto" | "compact" | "detailed";
+/** Phone-app store buttons on app tiles: auto = whichever matches the device's OS, none on computers. */
+export type MobileApps = "off" | "auto" | "android" | "ios";
 
 export interface Prefs {
 	/** Apps the user chose to hide (app ids; older entries are URLs). */
@@ -19,12 +21,22 @@ export interface Prefs {
 	startTab: HomeTab;
 	/** How the app launcher is drawn. */
 	appView: AppView;
+	/** Which phone-app store buttons to show. */
+	mobileApps: MobileApps;
 }
 
 export const DAY_CHOICES = [1, 3, 7, 14, 30] as const;
 export const TABS: HomeTab[] = ["feed", "schedule", "apps"];
 export const APP_VIEWS: AppView[] = ["auto", "compact", "detailed"];
-export const DEFAULT_PREFS: Prefs = { hidden: [], pinned: [], days: 7, startTab: "feed", appView: "auto" };
+export const MOBILE_APPS: MobileApps[] = ["off", "auto", "android", "ios"];
+export const DEFAULT_PREFS: Prefs = {
+	hidden: [],
+	pinned: [],
+	days: 7,
+	startTab: "feed",
+	appView: "auto",
+	mobileApps: "auto",
+};
 
 export function normalizePrefs(raw: unknown): Prefs {
 	const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
@@ -37,6 +49,9 @@ export function normalizePrefs(raw: unknown): Prefs {
 		days: (DAY_CHOICES as readonly number[]).includes(days) ? days : DEFAULT_PREFS.days,
 		startTab: TABS.includes(r.startTab as HomeTab) ? (r.startTab as HomeTab) : DEFAULT_PREFS.startTab,
 		appView: APP_VIEWS.includes(r.appView as AppView) ? (r.appView as AppView) : DEFAULT_PREFS.appView,
+		mobileApps: MOBILE_APPS.includes(r.mobileApps as MobileApps)
+			? (r.mobileApps as MobileApps)
+			: DEFAULT_PREFS.mobileApps,
 	};
 }
 

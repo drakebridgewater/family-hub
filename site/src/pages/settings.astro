@@ -3,7 +3,7 @@ import Base from "../layouts/Base.astro";
 import { getFamilyUser } from "../lib/auth";
 import { isAppAdmin, prefMatches, resolveIcon, servicesFor } from "../lib/services";
 import { maxScheduleDays, scheduleEnabled } from "../lib/calendar";
-import { DAY_CHOICES, getPrefs, savePrefs, type AppView, type HomeTab } from "../lib/prefs";
+import { DAY_CHOICES, getPrefs, savePrefs, type AppView, type HomeTab, type MobileApps } from "../lib/prefs";
 
 const user = await getFamilyUser(Astro.request);
 if (!user) return Astro.redirect("/login", 302);
@@ -36,6 +36,7 @@ if (Astro.request.method === "POST") {
 		days: Number(form.get("days")),
 		startTab: String(form.get("startTab")) as HomeTab,
 		appView: String(form.get("appView")) as AppView,
+		mobileApps: String(form.get("mobileApps")) as MobileApps,
 	});
 	return Astro.redirect("/", 303);
 }
@@ -53,6 +54,12 @@ const viewChoices: Array<{ id: AppView; label: string }> = [
 	{ id: "auto", label: "Automatic" },
 	{ id: "compact", label: "Compact" },
 	{ id: "detailed", label: "Detailed" },
+];
+const mobileChoices: Array<{ id: MobileApps; label: string }> = [
+	{ id: "off", label: "Off" },
+	{ id: "auto", label: "Automatic" },
+	{ id: "android", label: "Android" },
+	{ id: "ios", label: "iPhone & iPad" },
 ];
 const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 ---
@@ -107,6 +114,20 @@ const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 						<label class="chip">
 							<input type="radio" name="appView" value={v.id} checked={prefs.appView === v.id} />
 							<span>{v.label}</span>
+						</label>
+					))
+				}
+			</div>
+			<p class="hint">
+				Phone app buttons: a "Get app" button under apps that have their own phone app. Automatic shows the one for your
+				phone (iPhone or Android) and none on computers.
+			</p>
+			<div class="chips chips--spaced">
+				{
+					mobileChoices.map((m) => (
+						<label class="chip">
+							<input type="radio" name="mobileApps" value={m.id} checked={prefs.mobileApps === m.id} />
+							<span>{m.label}</span>
 						</label>
 					))
 				}

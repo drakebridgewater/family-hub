@@ -21,12 +21,13 @@ export const POST: APIRoute = async ({ request, url }) => {
 	}
 	const current = await getPrefs(user.username);
 	// Only the simple settings; the hidden-apps list is edited on /settings.
-	const { appView, days, startTab } = patch;
+	const { appView, days, startTab, mobileApps } = patch;
 	await savePrefs(user.username, {
 		...current,
 		...(appView !== undefined && { appView }),
 		...(days !== undefined && { days }),
 		...(startTab !== undefined && { startTab }),
+		...(mobileApps !== undefined && { mobileApps }),
 	} as typeof current);
 	return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 };

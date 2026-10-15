@@ -64,10 +64,12 @@ sections:
       - name: zigbee
         url: https://zigbee.example.com/
         icon: zigbee2mqtt
+        description: Pair & manage Zigbee devices
         groups: [admins]
       - name: zwave
         url: https://zwave.example.com/
         icon: zwavejs2mqtt
+        description: Pair & manage Z-Wave devices
         groups: [admins]
       - name: Plant Manager
         url: https://plants.example.com/
@@ -90,6 +92,7 @@ sections:
       - name: sparky-fitness
         url: https://fitness.example.com/
         icon: 🏃
+        description: Track workouts, meals & weight (MyFitnessPal)
         groups: [admins]
 
   - title: Share & organize
@@ -148,19 +151,19 @@ sections:
       - name: Docker
         url: https://docker.example.com
         icon: docker
-        description: Authelia Admin UI to manage users and groups
+        description: Manage Docker containers & stacks
         groups: [admins]
       
       - name: VS Code
         url: https://code.example.com
         icon: vscode
-        description: 
+        description: Code editor in the browser
         groups: [admins]
       
       - name: Backups
         url: https://backrest.example.com/
         icon: backrest
-        description: 
+        description: Scheduled backups & restores
         groups: [admins]
      
 
@@ -169,37 +172,46 @@ sections:
       - name: Sonarr
         icon: sonarr
         url: https://sonarr.example.com
+        description: Finds & organizes TV shows
         groups: [admins]
       - name: Radarr
         icon: radarr
         url: https://radarr.example.com
+        description: Finds & organizes movies
         groups: [admins]
       - name: Lidarr
         icon: lidarr
         url: https://lidarr.example.com
+        description: Finds & organizes music
         groups: [admins]
       - name: Prowlarr
         icon: prowlarr
         url: https://prowlarr.example.com
+        description: Indexer manager for Sonarr, Radarr & Lidarr
         groups: [admins]
       - name: Lazylibrarian
         icon: lazylibrarian
         url: https://lazylibrarian.example.com
+        description: Finds & organizes books & audiobooks
         groups: [admins]
       - name: sabnzbd
         icon: sabnzbd
         url: https://sabnzbd.example.com
+        description: Usenet downloader
         groups: [admins]
 
       - name: transmission
         url: https://transmission.example.com/
         icon: transmission
+        description: BitTorrent client
         groups: [admins]
       - name: stremio
         url: https://stremio.example.com/
         icon: stremio
+        description: Streaming player with add-ons
         groups: [admins]
       - name: slskd
         url: https://slskd.example.com/
         icon: slskd
+        description: Soulseek music sharing
         groups: [admins]

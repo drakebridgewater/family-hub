@@ -50,7 +50,8 @@ forged header just gets the public view.
   under Content types.) Photos in it are still reachable by their direct URL.
 - **Add or remove apps:** members of the `admin` group (set `ADMIN_GROUPS` to change it) use *Manage apps* in the
   account menu (`/admin/apps`). Each app can be **Shown** (people may hide it for themselves), **Always shown**, or
-  **Hidden** from everyone. Until the first change there, apps come from `config/services.yaml`; that first save copies
+  **Hidden** from everyone. Until the first change there, apps come from `config/services.yaml` (seeded on first run
+  from the tracked `config/services.example.yaml`, which holds placeholder hosts only); that first save copies
   them into Postgres and the file is no longer read. Icons: a [dashboard-icons](https://dashboardicons.com) name (guessed
   from the app name), an image URL, or an emoji.
 - **Finding apps:** press `/` or ⌘K / Ctrl+K on any page (or the ▦ button in the header) to search apps. Each person
@@ -73,5 +74,8 @@ forged header just gets the public view.
 ## Develop locally
 
 ```bash
-cd site && npm install && npm run dev
+cd site && npm install && cp config/services.example.yaml config/services.yaml && npm run dev
 ```
+
+`config/services.yaml` is the file to edit with your real hostnames; it is git-ignored, so only the
+placeholder `config/services.example.yaml` is ever committed.

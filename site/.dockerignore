@@ -4,3 +4,4 @@ dist
 data
 uploads
 *.db*
+config/services.yaml

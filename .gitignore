@@ -1,0 +1,3 @@
+# Local, real service list: copy config/services.example.yaml to config/services.yaml.
+# Kept out of git so real hostnames are never published.
+site/config/services.yaml

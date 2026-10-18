@@ -66,6 +66,16 @@ const appName = (() => {
 	}
 })();
 const firstName = user?.name.split(" ")[0] || user?.username;
+const hasApps = !!launcher && (launcher.favorites.length > 0 || launcher.sections.length > 0);
+const accountLinks = user
+	? [
+			...(canPost(user.groups) ? [{ label: "Write and edit", href: EDITOR_URL }] : []),
+			{ label: "Customize home", href: "/settings" },
+			...(isAppAdmin(user) ? [{ label: "Manage apps", href: "/admin/apps" }] : []),
+			{ label: "Password and security", href: securityUrl() },
+			{ label: "Sign out", href: logoutUrl() },
+		]
+	: [];
 ---
 
 <!doctype html>
@@ -98,12 +108,12 @@ const firstName = user?.name.split(" ")[0] || user?.username;
 		<EmDashBodyStart page={page} />
 		<header class="bw-header">
 			<div class="bw-strip" aria-hidden="true"></div>
-			<div class="frame bw-header__bar">
+			<div class="bw-container bw-header__bar">
 				<Wordmark href="/" />
-				{
-					menuItems.length > 0 && (
-						<nav class="bw-nav" aria-label={menu?.label ?? "Site"}>
-							{/* The guide's Header nav: inline links on wide screens, a "Menu" dropdown on phones. */}
+				{/* The guide's Header nav: links, apps, account. Below 720px all of it folds into "Menu". */}
+				<nav class="bw-nav" aria-label={menu?.label ?? "Site"}>
+					{
+						menuItems.length > 0 && (
 							<ul class="bw-nav__inline" role="list">
 								{menuItems.map((item) => (
 									<li>
@@ -147,76 +157,98 @@ const firstName = user?.name.split(" ")[0] || user?.username;
 									</li>
 								))}
 							</ul>
-							<details class="bw-nav__drop">
-								<summary class="bw-btn bw-btn--secondary">Menu</summary>
-								<ul class="bw-nav__panel" role="list">
-									{menuItems.map((item) => (
-										<li>
-											<a
-												href={item.url}
-												target={item.target || undefined}
-												rel={item.target === "_blank" ? "noopener" : undefined}
-												aria-current={isCurrent(item.url) ? "page" : undefined}
-											>
-												{item.label}
-											</a>
-											{item.children.length > 0 && (
-												<ul class="bw-nav__children" role="list">
-													{item.children.map((child) => (
-														<li>
-															<a
-																href={child.url}
-																target={child.target || undefined}
-																rel={child.target === "_blank" ? "noopener" : undefined}
-																aria-current={isCurrent(child.url) ? "page" : undefined}
-															>
-																{child.label}
-															</a>
-														</li>
-													))}
-												</ul>
-											)}
-										</li>
-									))}
-								</ul>
-							</details>
-						</nav>
-					)
-				}
-				<ThemeToggle />
-			</div>
-			<div class="bw-header__rule"></div>
-			<div class="frame bw-header__where where">
-				<Prompt user={user?.username ?? "you"} app={{ label: appName, href: "/" }} userHref="/" path={path} />
-				<div class="where__tools">
-					{launcher && <AppLauncher launcher={launcher} />}
+						)
+					}
+					{
+						hasApps && (
+							<div class="bw-nav__actions">
+								<button
+									type="button"
+									class="bw-btn bw-btn--secondary bw-btn--icon"
+									data-launcher-open
+									aria-haspopup="dialog"
+									aria-controls="launcher"
+									aria-label="Apps"
+									title="Apps (press /)"
+								>
+									<Icon name="grid" />
+								</button>
+							</div>
+						)
+					}
 					{
 						user ? (
-							<details class="account">
-								<summary class="bw-btn bw-btn--secondary bw-btn--sm" aria-label={`Account menu for ${user.name}`}>
+							<details class="bw-nav__account">
+								<summary class="bw-btn bw-btn--secondary" aria-label={`Account menu for ${user.name}`}>
 									{firstName}
 								</summary>
-								<div class="account__menu popover">
-									<p class="account__who">
+								<div class="bw-nav__panel">
+									<p class="bw-nav__who">
 										<strong>{user.name}</strong>
-										<span class="bw-mono">{user.email || user.username}</span>
+										<span>{user.email || user.username}</span>
 									</p>
-									{canPost(user.groups) && (
-										<a href={EDITOR_URL} class="bw-btn bw-btn--secondary">Write and edit</a>
-									)}
-									<a href="/settings" class="bw-btn bw-btn--quiet">Customize home</a>
-									{isAppAdmin(user) && <a href="/admin/apps" class="bw-btn bw-btn--quiet">Manage apps</a>}
-									<a href={securityUrl()} class="bw-btn bw-btn--quiet">Password and security</a>
-									<a href={logoutUrl()} class="bw-btn bw-btn--quiet">Sign out</a>
+									{accountLinks.map((l) => <a href={l.href}>{l.label}</a>)}
 								</div>
 							</details>
 						) : (
-							<a href="/login" class="bw-btn bw-btn--secondary bw-btn--sm">Sign in</a>
+							<a href="/login" class="bw-btn bw-btn--secondary bw-nav__signin">Sign in</a>
 						)
 					}
-				</div>
+					<details class="bw-nav__drop">
+						<summary class="bw-btn bw-btn--secondary">Menu</summary>
+						<ul class="bw-nav__panel" role="list">
+							{menuItems.map((item) => (
+								<li>
+									<a href={item.url} target={item.target || undefined} rel={item.target === "_blank" ? "noopener" : undefined} aria-current={isCurrent(item.url) ? "page" : undefined}>
+										{item.label}
+									</a>
+									{item.children.length > 0 && (
+										<ul class="bw-nav__children" role="list">
+											{item.children.map((child) => (
+												<li>
+													<a href={child.url} target={child.target || undefined} rel={child.target === "_blank" ? "noopener" : undefined} aria-current={isCurrent(child.url) ? "page" : undefined}>
+														{child.label}
+													</a>
+												</li>
+											))}
+										</ul>
+									)}
+								</li>
+							))}
+							{hasApps && (
+								<li>
+									<button type="button" data-launcher-open aria-haspopup="dialog" aria-controls="launcher">Find an app</button>
+								</li>
+							)}
+							{
+								user ? (
+									<li class="bw-nav__section">
+										<span class="bw-nav__group">{user.name}</span>
+										<ul class="bw-nav__children" role="list">
+											{accountLinks.map((l) => (
+												<li>
+													<a href={l.href}>{l.label}</a>
+												</li>
+											))}
+										</ul>
+									</li>
+								) : (
+									<li class:list={{ "bw-nav__section": menuItems.length > 0 }}>
+										<a href="/login">Sign in</a>
+									</li>
+								)
+							}
+						</ul>
+					</details>
+				</nav>
+				<ThemeToggle />
+			</div>
+			<div class="bw-header__rule"></div>
+			<div class="bw-container bw-header__where">
+				<Prompt user={user?.username ?? "you"} app={{ label: appName, href: "/" }} userHref="/" path={path} />
 			</div>
 		</header>
+		{launcher && <AppLauncher launcher={launcher} />}
 
 		<main class="frame main">
 			<slot />
@@ -269,54 +301,37 @@ const firstName = user?.name.split(" ")[0] || user?.username;
 				</script>
 			)
 		}
+		<script>
+			// Header dropdowns close on a click outside them or on Escape, and opening one
+			// closes the others (as the style guide's Header does).
+			const openDrops = () => document.querySelectorAll<HTMLDetailsElement>(".bw-header details[open]");
+			const closeAll = (keep?: Node | null) => {
+				for (const d of openDrops()) if (!keep || !d.contains(keep)) d.open = false;
+			};
+			document.addEventListener("click", (event) => closeAll(event.target as Node));
+			document.addEventListener("keydown", (event) => {
+				if (event.key !== "Escape") return;
+				const open = openDrops()[0];
+				if (!open) return;
+				closeAll();
+				open.querySelector("summary")?.focus();
+			});
+			document.addEventListener(
+				"toggle",
+				(event) => {
+					const d = event.target as HTMLDetailsElement;
+					if (d.open && d.closest(".bw-header")) closeAll(d);
+				},
+				true,
+			);
+			// The launcher's buttons in the menu: close the menu as the dialog opens.
+			for (const b of document.querySelectorAll(".bw-header [data-launcher-open]")) b.addEventListener("click", () => closeAll());
+		</script>
 		<EmDashBodyEnd page={page} />
 	</body>
 </html>
 
 <style>
-	.where {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-3);
-	}
-	.where__tools {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		flex-shrink: 0;
-	}
-	.account {
-		position: relative;
-	}
-	.account > summary {
-		list-style: none;
-	}
-	.account > summary::-webkit-details-marker {
-		display: none;
-	}
-	.account__menu {
-		position: absolute;
-		right: 0;
-		top: calc(100% + var(--space-2));
-		z-index: 30;
-		width: min(280px, calc(100vw - 32px));
-		padding: var(--space-4);
-		display: grid;
-		gap: var(--space-1);
-	}
-	.account__menu .bw-btn {
-		justify-content: flex-start;
-	}
-	.account__who {
-		display: grid;
-		margin-bottom: var(--space-3);
-	}
-	.account__who span {
-		color: var(--comment);
-		font-size: 14px;
-		overflow-wrap: anywhere;
-	}
 	.wide {
 		--max: var(--page-max);
 	}

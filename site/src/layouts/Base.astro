@@ -100,6 +100,89 @@ const firstName = user?.name.split(" ")[0] || user?.username;
 			<div class="bw-strip" aria-hidden="true"></div>
 			<div class="frame bw-header__bar">
 				<Wordmark href="/" />
+				{
+					menuItems.length > 0 && (
+						<nav class="bw-nav" aria-label={menu?.label ?? "Site"}>
+							{/* The guide's Header nav: inline links on wide screens, a "Menu" dropdown on phones. */}
+							<ul class="bw-nav__inline" role="list">
+								{menuItems.map((item) => (
+									<li>
+										{item.children.length ? (
+											<details class="bw-nav__sub">
+												<summary>{item.label}</summary>
+												<ul class="bw-nav__panel" role="list">
+													<li>
+														<a href={item.url} target={item.target || undefined} rel={item.target === "_blank" ? "noopener" : undefined}>
+															{item.label}
+														</a>
+													</li>
+													{item.children.map((child) => (
+														<li>
+															<a
+																href={child.url}
+																target={child.target || undefined}
+																rel={child.target === "_blank" ? "noopener" : undefined}
+																title={child.titleAttr || undefined}
+																class={child.cssClasses || undefined}
+																aria-current={isCurrent(child.url) ? "page" : undefined}
+															>
+																{child.label}
+															</a>
+														</li>
+													))}
+												</ul>
+											</details>
+										) : (
+											<a
+												href={item.url}
+												target={item.target || undefined}
+												rel={item.target === "_blank" ? "noopener" : undefined}
+												title={item.titleAttr || undefined}
+												class={item.cssClasses || undefined}
+												aria-current={isCurrent(item.url) ? "page" : undefined}
+											>
+												{item.label}
+											</a>
+										)}
+									</li>
+								))}
+							</ul>
+							<details class="bw-nav__drop">
+								<summary class="bw-btn bw-btn--secondary">Menu</summary>
+								<ul class="bw-nav__panel" role="list">
+									{menuItems.map((item) => (
+										<li>
+											<a
+												href={item.url}
+												target={item.target || undefined}
+												rel={item.target === "_blank" ? "noopener" : undefined}
+												aria-current={isCurrent(item.url) ? "page" : undefined}
+											>
+												{item.label}
+											</a>
+											{item.children.length > 0 && (
+												<ul class="bw-nav__children" role="list">
+													{item.children.map((child) => (
+														<li>
+															<a
+																href={child.url}
+																target={child.target || undefined}
+																rel={child.target === "_blank" ? "noopener" : undefined}
+																aria-current={isCurrent(child.url) ? "page" : undefined}
+															>
+																{child.label}
+															</a>
+														</li>
+													))}
+												</ul>
+											)}
+										</li>
+									))}
+								</ul>
+							</details>
+						</nav>
+					)
+				}
 				<ThemeToggle />
 			</div>
 			<div class="bw-header__rule"></div>
@@ -134,49 +217,6 @@ const firstName = user?.name.split(" ")[0] || user?.username;
 				</div>
 			</div>
 		</header>
-
-		{
-			menuItems.length > 0 && (
-				<nav class="frame sitenav" aria-label={menu?.label ?? "Site"}>
-					<ul role="list">
-						{menuItems.map((item) => (
-							<li>
-								{item.children.length ? (
-									<details class="sitenav__sub">
-										<summary>{item.label}</summary>
-										<ul class="popover sitenav__panel" role="list">
-											<li>
-												<a href={item.url} target={item.target || undefined} rel={item.target === "_blank" ? "noopener" : undefined}>
-													{item.label}
-												</a>
-											</li>
-											{item.children.map((child) => (
-												<li>
-													<a href={child.url} target={child.target || undefined} rel={child.target === "_blank" ? "noopener" : undefined} title={child.titleAttr || undefined} class={child.cssClasses || undefined}>
-														{child.label}
-													</a>
-												</li>
-											))}
-										</ul>
-									</details>
-								) : (
-									<a
-										href={item.url}
-										target={item.target || undefined}
-										rel={item.target === "_blank" ? "noopener" : undefined}
-										title={item.titleAttr || undefined}
-										class={item.cssClasses || undefined}
-										aria-current={isCurrent(item.url) ? "page" : undefined}
-									>
-										{item.label}
-									</a>
-								)}
-							</li>
-						))}
-					</ul>
-				</nav>
-			)
-		}
 
 		<main class="frame main">
 			<slot />
@@ -234,15 +274,6 @@ const firstName = user?.name.split(" ")[0] || user?.username;
 </html>
 
 <style>
-	.bw-header__bar :global(.bw-lt) {
-		height: 28px;
-		width: auto;
-	}
-	@media (max-width: 559px) {
-		.bw-header__bar :global(.bw-lt) {
-			height: 22px;
-		}
-	}
 	.where {
 		display: flex;
 		align-items: center;
@@ -285,54 +316,6 @@ const firstName = user?.name.split(" ")[0] || user?.username;
 		color: var(--comment);
 		font-size: 14px;
 		overflow-wrap: anywhere;
-	}
-	.sitenav {
-		padding-top: var(--space-3);
-	}
-	.sitenav ul {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-	}
-	.sitenav > ul {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-1) var(--space-5);
-	}
-	.sitenav a,
-	.sitenav summary {
-		color: var(--teal);
-		text-decoration: none;
-		cursor: pointer;
-	}
-	.sitenav a:hover,
-	.sitenav summary:hover,
-	.sitenav a[aria-current="page"] {
-		text-decoration: underline;
-		text-decoration-thickness: var(--hairline);
-		text-underline-offset: 3px;
-	}
-	.sitenav__sub {
-		position: relative;
-	}
-	.sitenav__sub > summary {
-		list-style: none;
-	}
-	.sitenav__sub > summary::-webkit-details-marker {
-		display: none;
-	}
-	.sitenav__panel {
-		position: absolute;
-		left: 0;
-		top: calc(100% + var(--space-2));
-		z-index: 30;
-		min-width: 220px;
-		max-width: calc(100vw - 32px);
-		padding: var(--space-2) var(--space-4);
-	}
-	.sitenav__panel a {
-		display: block;
-		padding: var(--space-2) 0;
 	}
 	.wide {
 		--max: var(--page-max);

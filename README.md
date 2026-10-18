@@ -87,6 +87,14 @@ cd site && node scripts/sync-style.mjs ../../style.bridgewater   # or set STYLE_
 
 Fira Sans and Fira Code are self-hosted through `@fontsource`.
 
+### The apps launcher in your other apps
+
+Every bridgewater.digital app uses the style guide's header, whose apps button opens the same launcher as the hub.
+Those apps load the list from the hub's `GET /api/apps`: the signed-in person's apps, favorites and order, or `401`
+when signed out. The hub allows credentialed requests from `https://*.<parent domain>` (for `social.bridgewater.digital`,
+any `https://*.bridgewater.digital`), so Authelia's session cookie must be scoped to that parent domain for the other
+apps to send it. App paths like `/photos` come back as absolute URLs on the hub.
+
 ## Develop locally
 
 ```bash

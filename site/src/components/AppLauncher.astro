@@ -1,6 +1,8 @@
 ---
 /**
- * The quick launcher dialog, on every page for signed-in people. Any
+ * The quick launcher dialog, on every page for signed-in people. It uses the
+ * style guide's bw-launcher markup, the same dialog every other app's header
+ * opens (those fetch /api/apps; the hub renders its list here directly). Any
  * [data-launcher-open] button opens it (the header has two), as do "/" and
  * ⌘K / Ctrl+K; type to filter, ↑↓ and Enter to open.
  */
@@ -21,11 +23,11 @@ const groups = [
 {
 	groups.length > 0 && (
 		<>
-			<dialog id="launcher" class="launcher popover" aria-label="Apps">
-				<div class="launcher__head">
+			<dialog id="launcher" class="bw-launcher" aria-label="Apps">
+				<div class="bw-launcher__head">
 					<input
 						type="search"
-						class="launcher__input"
+						class="bw-launcher__input"
 						placeholder="Find an app…"
 						aria-label="Find an app"
 						aria-controls="launcher-list"
@@ -38,31 +40,31 @@ const groups = [
 						</button>
 					</form>
 				</div>
-				<div class="launcher__list" id="launcher-list">
+				<div class="bw-launcher__list" id="launcher-list">
 					{groups.map((g) => (
-						<section class="launcher__group" data-fav={g.fav ? "" : undefined}>
-							<h3 class="label launcher__title">{g.title}</h3>
+						<section class="bw-launcher__group" data-fav={g.fav ? "" : undefined}>
+							<h3 class="bw-launcher__title">{g.title}</h3>
 							<ul role="list">
 								{g.services.map((svc) => (
 									<li>
 										<a
-											class="row"
+											class="bw-launcher__row"
 											href={svc.url}
 											rel="noopener"
 											data-search={`${svc.name} ${svc.description ?? ""} ${g.fav ? "" : g.title}`.toLowerCase()}
 										>
 											<AppIcon name={svc.name} icon={svc.icon} size={28} lazy />
-											<span class="row__name">{svc.name}</span>
-											{svc.description && <span class="row__desc">{svc.description}</span>}
+											<span class="bw-launcher__name">{svc.name}</span>
+											{svc.description && <span class="bw-launcher__desc">{svc.description}</span>}
 										</a>
 									</li>
 								))}
 							</ul>
 						</section>
 					))}
-					<p class="launcher__none" hidden>No apps match.</p>
+					<p class="bw-launcher__none" hidden>No apps match.</p>
 				</div>
-				<p class="launcher__foot">
+				<p class="bw-launcher__foot">
 					<kbd>↑</kbd><kbd>↓</kbd> move · <kbd>Enter</kbd> open · <kbd>/</kbd> or <kbd>⌘K</kbd> from any page
 				</p>
 			</dialog>
@@ -73,10 +75,10 @@ const groups = [
 <script>
 	const dialog = document.querySelector<HTMLDialogElement>("#launcher");
 	if (dialog) {
-		const input = dialog.querySelector<HTMLInputElement>(".launcher__input")!;
-		const rows = [...dialog.querySelectorAll<HTMLAnchorElement>(".row")];
-		const groups = [...dialog.querySelectorAll<HTMLElement>(".launcher__group")];
-		const none = dialog.querySelector<HTMLElement>(".launcher__none")!;
+		const input = dialog.querySelector<HTMLInputElement>(".bw-launcher__input")!;
+		const rows = [...dialog.querySelectorAll<HTMLAnchorElement>(".bw-launcher__row")];
+		const groups = [...dialog.querySelectorAll<HTMLElement>(".bw-launcher__group")];
+		const none = dialog.querySelector<HTMLElement>(".bw-launcher__none")!;
 		let active: HTMLAnchorElement | undefined;
 
 		const visible = () => rows.filter((r) => !r.closest("[hidden]"));
@@ -140,107 +142,3 @@ const groups = [
 		});
 	}
 </script>
-
-<style>
-	.launcher {
-		width: min(560px, calc(100vw - 24px));
-		max-height: min(640px, calc(100dvh - 48px));
-		margin: 10vh auto auto;
-		padding: 0;
-		overflow: hidden;
-		flex-direction: column;
-	}
-	.launcher[open] {
-		display: flex;
-	}
-	.launcher::backdrop {
-		background: color-mix(in srgb, var(--ink) 35%, transparent);
-	}
-	.launcher__head {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3);
-		padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
-		border-bottom: var(--hairline) solid var(--line);
-	}
-	.launcher__input {
-		flex: 1;
-		min-width: 0;
-		border: 0;
-		background: transparent;
-		color: var(--ink);
-		font: 400 17px/26px var(--font-sans);
-		padding: var(--space-2) 0;
-		outline: none;
-	}
-	.launcher__input::placeholder {
-		color: var(--comment);
-	}
-	.launcher__list {
-		overflow-y: auto;
-		overscroll-behavior: contain;
-		padding: 0 var(--space-4) var(--space-3);
-	}
-	.launcher__group ul {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-	}
-	.launcher__title {
-		margin: var(--space-4) 0 var(--space-1);
-	}
-	.row {
-		display: grid;
-		grid-template-columns: 28px auto 1fr;
-		align-items: center;
-		gap: var(--space-3);
-		min-height: 44px;
-		padding: var(--space-1) var(--space-2);
-		margin: 0 calc(-1 * var(--space-2));
-		border-radius: var(--radius-sm);
-		color: var(--ink);
-		text-decoration: none;
-	}
-	.row:hover,
-	.row:focus-visible {
-		background: var(--panel);
-		outline: none;
-	}
-	.row.is-active {
-		background: var(--sig-tint);
-	}
-	.row__name {
-		font-weight: 500;
-		white-space: nowrap;
-	}
-	.row__desc {
-		color: var(--comment);
-		font-size: 14px;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-	.launcher__none {
-		margin: var(--space-4) 0;
-		color: var(--comment);
-	}
-	.launcher__foot {
-		padding: var(--space-2) var(--space-4);
-		border-top: var(--hairline) solid var(--line);
-		color: var(--comment);
-		font-size: 12.5px;
-		line-height: 18px;
-	}
-	kbd {
-		margin-right: 2px;
-	}
-	/* Phones: no keyboard, so skip the hints and use the full screen height. */
-	@media (max-width: 559px) {
-		.launcher {
-			margin-top: calc(12px + env(safe-area-inset-top));
-		}
-		.launcher__foot {
-			display: none;
-		}
-	}
-</style>

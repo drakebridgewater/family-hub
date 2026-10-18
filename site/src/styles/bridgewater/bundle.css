@@ -88,8 +88,8 @@ img { max-width: 100%; }
 .bw-nav ul { list-style: none; margin: 0; padding: 0; }
 .bw-nav summary { list-style: none; cursor: pointer; }
 .bw-nav summary::-webkit-details-marker { display: none; }
-/* .bw-nav > beats .bw-btn, which the Sign in link and Menu button also carry. */
-.bw-nav > .bw-nav__inline, .bw-nav > .bw-nav__actions, .bw-nav > .bw-nav__account, .bw-nav > .bw-nav__signin { display: none; }
+/* .bw-header .bw-nav > beats the bar's shared control rule, which these also match. */
+.bw-header .bw-nav > .bw-nav__inline, .bw-header .bw-nav > .bw-nav__apps, .bw-header .bw-nav > .bw-nav__account, .bw-header .bw-nav > .bw-nav__signin { display: none; }
 .bw-nav__drop, .bw-nav__sub, .bw-nav__account { position: relative; }
 .bw-nav__panel { position: absolute; right: 0; top: calc(100% + var(--space-2)); z-index: 30; display: grid; min-width: 220px; max-width: calc(100vw - 32px); padding: var(--space-2); background: var(--page); border: var(--hairline) solid var(--line-strong); border-radius: var(--radius-md); }
 .bw-nav__panel a, .bw-nav__panel button, .bw-nav__group { display: block; width: 100%; padding: var(--space-2) var(--space-3); border: 0; border-radius: var(--radius-sm); background: none; color: var(--ink); font: 400 16px/24px var(--font-sans); text-align: left; text-decoration: none; cursor: pointer; }
@@ -101,14 +101,14 @@ img { max-width: 100%; }
 .bw-nav__who { display: grid; padding: var(--space-2) var(--space-3) var(--space-3); margin-bottom: var(--space-2); border-bottom: var(--hairline) solid var(--line); }
 .bw-nav__who span { color: var(--comment); font: 400 14px/22px var(--font-mono); overflow-wrap: anywhere; }
 @media (min-width: 900px) {
-  .bw-nav > .bw-nav__drop { display: none; }
-  .bw-nav > .bw-nav__inline, .bw-nav > .bw-nav__actions { display: flex; align-items: center; gap: var(--space-1); }
-  .bw-nav > .bw-nav__account, .bw-nav > .bw-nav__signin { display: inline-flex; }
+  .bw-header .bw-nav > .bw-nav__drop { display: none; }
+  .bw-header .bw-nav > .bw-nav__inline { display: flex; align-items: center; gap: var(--space-1); }
+  .bw-header .bw-nav > .bw-nav__account, .bw-header .bw-nav > .bw-nav__signin, .bw-header .bw-nav > .bw-nav__apps { display: inline-flex; }
   .bw-nav__sub .bw-nav__panel { left: 0; right: auto; }
   .bw-nav__account .bw-nav__panel { width: 280px; }
 }
 /* Every control in the bar looks the same: menu links, dropdown triggers (sub-menus, account,
-   Menu), action buttons and the theme toggle. No borders, ink text, panel on hover or while open,
+   Menu), the apps button and the theme toggle. No borders, ink text, panel on hover or while open,
    the current page in sig on sig-tint. Overrides the button variants inside the bar. */
 .bw-header__bar .bw-btn, .bw-nav__inline > li > a, .bw-nav__sub > summary { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: var(--control); padding: 0 var(--space-3); border: var(--field-border) solid transparent; border-radius: var(--radius-sm); background: transparent; color: var(--ink); font: 500 15px/22px var(--font-sans); text-decoration: none; white-space: nowrap; }
 .bw-header__bar .bw-btn--icon { width: var(--control); padding: 0; }
@@ -122,6 +122,28 @@ img { max-width: 100%; }
   .bw-header__bar { gap: var(--space-3); }
   .bw-header__bar .bw-lt { height: 33px; width: auto; }
 }
+
+/* ---------- apps launcher: the same dialog in every app ---------- */
+.bw-launcher { width: min(560px, calc(100vw - 24px)); max-height: min(640px, calc(100dvh - 48px)); margin: 10vh auto auto; padding: 0; overflow: hidden; flex-direction: column; background: var(--page); color: var(--ink); border: var(--hairline) solid var(--line-strong); border-radius: var(--radius-md); }
+.bw-launcher[open] { display: flex; }
+.bw-launcher::backdrop { background: color-mix(in srgb, var(--ink) 35%, transparent); }
+.bw-launcher__head { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4); border-bottom: var(--hairline) solid var(--line); }
+.bw-launcher__input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ink); font: 400 17px/26px var(--font-sans); padding: var(--space-2) 0; outline: none; }
+.bw-launcher__input::placeholder { color: var(--comment); }
+.bw-launcher__input::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }
+.bw-launcher__list { overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--space-4) var(--space-3); }
+.bw-launcher__list ul { list-style: none; margin: 0; padding: 0; }
+.bw-launcher__title { margin: var(--space-4) 0 var(--space-1); font: 500 14px/22px var(--font-sans); color: var(--comment); }
+.bw-launcher__row { display: grid; grid-template-columns: 28px auto 1fr; align-items: center; gap: var(--space-3); min-height: 44px; margin: 0 calc(-1 * var(--space-2)); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); color: var(--ink); text-decoration: none; }
+.bw-launcher__row:hover, .bw-launcher__row:focus-visible { background: var(--panel); outline: none; text-decoration: none; }
+.bw-launcher__row.is-active { background: var(--sig-tint); }
+.bw-launcher__row .bw-tile { width: 28px; height: 28px; font-size: 13px; }
+.bw-launcher__name { font-weight: 500; white-space: nowrap; }
+.bw-launcher__desc { color: var(--comment); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bw-launcher__none { margin: var(--space-4) 0; color: var(--comment); }
+.bw-launcher__foot { padding: var(--space-2) var(--space-4); border-top: var(--hairline) solid var(--line); color: var(--comment); font-size: 12.5px; line-height: 18px; }
+.bw-launcher kbd { margin-right: 2px; font: 500 12.5px/18px var(--font-mono); padding: 0 var(--space-1); border: var(--hairline) solid var(--line-strong); border-radius: var(--radius-sm); color: var(--comment); }
+@media (max-width: 559px) { .bw-launcher { margin-top: calc(12px + env(safe-area-inset-top)); } .bw-launcher__foot { display: none; } }
 
 /* ---------- button ---------- */
 .bw-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: var(--control); padding: 0 var(--space-4); border: var(--field-border) solid transparent; border-radius: var(--radius-sm); background: transparent; color: var(--ink); font: 500 14px/20px var(--font-sans); text-decoration: none; cursor: pointer; }
@@ -196,6 +218,7 @@ a.bw-row__name:hover { text-decoration: underline; text-decoration-thickness: va
 .bw-tile { display: inline-flex; align-items: center; justify-content: center; flex: none; width: var(--tile); height: var(--tile); border-radius: var(--radius-sm); background: var(--sig-fill); color: var(--on-sig); font: 600 18px/1 var(--font-sans); overflow: hidden; }
 .bw-tile--icon { background: transparent; }
 .bw-tile--icon img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.bw-tile--glyph { font-size: 20px; }
 
 /* ---------- skyline ---------- */
 .bw-skyline { display: block; width: 100%; height: auto; }

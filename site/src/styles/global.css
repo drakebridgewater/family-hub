@@ -7,7 +7,7 @@
 @import "./bridgewater/bundle.css";
 
 :root {
-	/* Content column; the home page widens to --page-max. */
+	/* Reading column on inner pages; it shares the header's left edge. The home page uses the full width. */
 	--max: 720px;
 	--nav-h: 60px;
 }
@@ -26,11 +26,15 @@ img {
 	display: block;
 }
 
+/* Same box as the header's bw-container, so every left edge lines up. */
 .frame {
 	width: 100%;
-	max-width: var(--max);
+	max-width: var(--page-max);
 	margin-inline: auto;
 	padding-inline: var(--space-4);
+}
+.frame > * {
+	max-width: var(--max);
 }
 @media (min-width: 720px) {
 	.frame {

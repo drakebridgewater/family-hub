@@ -1,7 +1,8 @@
 ---
 /**
- * Header apps button + quick launcher, on every page for signed-in people.
- * Opens with the button, "/" or ⌘K / Ctrl+K; type to filter, ↑↓ and Enter to open.
+ * The quick launcher dialog, on every page for signed-in people. Any
+ * [data-launcher-open] button opens it (the header has two), as do "/" and
+ * ⌘K / Ctrl+K; type to filter, ↑↓ and Enter to open.
  */
 import type { Launcher } from "../lib/services";
 import AppIcon from "./AppIcon.astro";
@@ -20,17 +21,6 @@ const groups = [
 {
 	groups.length > 0 && (
 		<>
-			<button
-				type="button"
-				class="bw-btn bw-btn--secondary bw-btn--sm bw-btn--icon"
-				data-launcher-open
-				aria-haspopup="dialog"
-				aria-controls="launcher"
-				aria-label="Apps"
-				title="Apps (press /)"
-			>
-				<Icon name="grid" />
-			</button>
 			<dialog id="launcher" class="launcher popover" aria-label="Apps">
 				<div class="launcher__head">
 					<input

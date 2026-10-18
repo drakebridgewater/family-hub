@@ -1,0 +1,14 @@
+---
+/** Mt. Hood across Trillium Lake: the system's one illustration, once at the foot of the home page. */
+import shapes from "../../styles/bridgewater/shapes.json";
+
+const { W, H, items } = shapes.sky;
+---
+
+<svg class="bw-skyline" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMax meet" focusable="false" aria-hidden="true">
+	{
+		items.map((it: any) =>
+			it.t === "path" ? <path class={`bw-sky-${it.c}`} d={it.d} /> : <circle class={`bw-sky-${it.c}`} cx={it.cx} cy={it.cy} r={it.r} />,
+		)
+	}
+</svg>

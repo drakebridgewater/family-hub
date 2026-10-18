@@ -1,0 +1,43 @@
+---
+/**
+ * Light/dark switch. Base.astro's head script sets data-theme before paint
+ * (saved choice, else prefers-color-scheme); this flips it and remembers it
+ * under the same key as the bundle's ThemeToggle.
+ */
+import Icon from "./Icon.astro";
+---
+
+<button type="button" class="bw-btn bw-btn--secondary bw-btn--icon theme-toggle" data-theme-toggle aria-label="Switch theme">
+	<Icon name="moon" class="theme-toggle__moon" />
+	<Icon name="sun" class="theme-toggle__sun" />
+</button>
+
+<script>
+	for (const button of document.querySelectorAll<HTMLButtonElement>("[data-theme-toggle]")) {
+		const paint = () => {
+			const dark = document.documentElement.dataset.theme === "dark";
+			button.setAttribute("aria-pressed", String(dark));
+			button.setAttribute("aria-label", `Switch to ${dark ? "light" : "dark"} theme`);
+		};
+		paint();
+		button.addEventListener("click", () => {
+			const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+			document.documentElement.dataset.theme = next;
+			try {
+				localStorage.setItem("bw-theme", next);
+			} catch {}
+			paint();
+		});
+	}
+</script>
+
+<style>
+	/* Show the icon of the theme it switches to. */
+	.theme-toggle :global(.theme-toggle__sun),
+	:global([data-theme="dark"]) .theme-toggle :global(.theme-toggle__moon) {
+		display: none;
+	}
+	:global([data-theme="dark"]) .theme-toggle :global(.theme-toggle__sun) {
+		display: block;
+	}
+</style>

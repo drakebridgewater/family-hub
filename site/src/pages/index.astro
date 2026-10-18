@@ -55,9 +55,9 @@ const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Go
 // start tab); desktop shows the feed with schedule and apps beside it.
 const tabs = user
 	? [
-			{ id: "feed", label: "Feed", icon: "☰" },
-			...(showSchedule ? [{ id: "schedule", label: "Schedule", icon: "◷" }] : []),
-			{ id: "apps", label: "Apps", icon: "▦" },
+			{ id: "feed", label: "Feed", icon: "family" as const },
+			...(showSchedule ? [{ id: "schedule", label: "Schedule", icon: "trail" as const }] : []),
+			{ id: "apps", label: "Apps", icon: "grid" as const },
 		]
 	: [];
 const requested = Astro.url.searchParams.get("tab") as HomeTab | null;
@@ -65,22 +65,22 @@ const tabIds = tabs.map((t) => t.id);
 const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) && tabIds.includes(t)) ?? tabIds[0];
 ---
 
-<Base user={user} tabs={tabs} activeTab={activeTab} wide={split || !!user} launcher={user ? launcher : undefined}>
+<Base user={user} tabs={tabs} activeTab={activeTab} wide={split || !!user} launcher={user ? launcher : undefined} skyline>
 	{
 		user ? (
 			<section class="hello" aria-labelledby="hello-title">
-				<h1 id="hello-title" class="hello__title">
-					{greeting}, {firstName} 👋
+				<h1 id="hello-title">
+					{greeting}, {firstName}
 				</h1>
 			</section>
 		) : (
-			<section class="welcome card" aria-labelledby="welcome-title">
-				<h1 id="welcome-title" class="welcome__title">Welcome, friends &amp; family</h1>
-				<p class="welcome__sub">
+			<section class="bw-panel welcome" aria-labelledby="welcome-title">
+				<h1 id="welcome-title" class="welcome__title">Welcome, friends and family</h1>
+				<p class="welcome__sub bw-soft">
 					Catch up on what we've been up to below. Family members can sign in to see our schedule and the
 					shared apps.
 				</p>
-				<a href="/login" class="btn">Sign in with your family account</a>
+				<a href="/login" class="bw-btn bw-btn--primary">Sign in with your family account</a>
 			</section>
 		)
 	}
@@ -92,18 +92,18 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 				<div class="section__head">
 					<h2 id="apps-title" class="section__title">Your apps</h2>
 					<span class="apps-tools">
-						<button type="button" class="findapp" data-launcher-open title="Find an app (press /)">
-							<span aria-hidden="true">⌕</span> Find <kbd>/</kbd>
+						<button type="button" class="bw-btn bw-btn--secondary bw-btn--sm findapp" data-launcher-open title="Find an app (press /)">
+							Find <kbd>/</kbd>
 						</button>
 						<span class="viewswitch" role="group" aria-label="App layout">
-							<button type="button" data-app-view="compact" aria-pressed={String(prefs.appView === "compact")} title="Compact: icons only">▦</button>
-							<button type="button" data-app-view="detailed" aria-pressed={String(prefs.appView === "detailed")} title="Detailed: show descriptions">☰</button>
+							<button type="button" class="bw-btn bw-btn--sm" data-app-view="compact" aria-pressed={String(prefs.appView === "compact")} title="Compact: icons only">Icons</button>
+							<button type="button" class="bw-btn bw-btn--sm" data-app-view="detailed" aria-pressed={String(prefs.appView === "detailed")} title="Detailed: show descriptions">Details</button>
 						</span>
-						<a class="section__meta section__link" href="/settings#apps">
+						<a class="section__link" href="/settings#apps">
 							{launcher.hiddenCount ? `${launcher.hiddenCount} hidden · Edit` : "Edit"}
 						</a>
 						{isAdmin && (
-							<a class="section__meta section__link" href="/admin/apps">Manage</a>
+							<a class="section__link" href="/admin/apps">Manage</a>
 						)}
 					</span>
 				</div>
@@ -117,18 +117,16 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 			<div class="section__head">
 				<h2 id="feed-title" class="section__title">Family feed</h2>
 				{showNewPost && (
-					<a href={NEW_POST_URL} class="btn newpost">
-						<span aria-hidden="true">✍️</span> New post
-					</a>
+					<a href={NEW_POST_URL} class="bw-btn bw-btn--primary bw-btn--sm">New post</a>
 				)}
 			</div>
 			{
 				posts.length === 0 ? (
-					<p class="card empty">
+					<p class="empty">
 						{showNewPost ? (
-							<>No posts yet. <a href={NEW_POST_URL}>Write the first one!</a></>
+							<>No posts yet. <a href={NEW_POST_URL}>Write the first one</a>.</>
 						) : (
-							"No posts yet. Check back soon!"
+							"No posts yet. Check back soon."
 						)}
 					</p>
 				) : (
@@ -148,7 +146,7 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 					<section id="schedule" class="section panel panel--schedule" aria-labelledby="schedule-title">
 						<div class="section__head">
 							<h2 id="schedule-title" class="section__title">Coming up</h2>
-							<a class="section__meta section__link" href="/settings#days">
+							<a class="section__link" href="/settings#days">
 								{scheduleLabel}
 							</a>
 						</div>
@@ -187,109 +185,46 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 </script>
 
 <style>
-	.hello {
-		padding-top: 12px;
-	}
-	.hello__title {
-		font-family: var(--font-serif);
-		font-size: clamp(1.6rem, 6vw, 2.1rem);
-		line-height: 1.15;
-		margin: 0;
-	}
-	.hello__sub {
-		margin: 4px 0 0;
-		color: var(--muted);
-	}
 	.welcome {
-		margin-top: 12px;
-		padding: 22px 20px;
-		background: linear-gradient(160deg, var(--accent-soft), var(--surface) 70%);
-	}
-	.welcome__title {
-		font-family: var(--font-serif);
-		font-size: clamp(1.5rem, 6vw, 2rem);
-		line-height: 1.15;
-		margin: 0;
+		display: grid;
+		gap: var(--space-3);
+		justify-items: start;
 	}
 	.welcome__sub {
-		margin: 8px 0 16px;
-		color: var(--muted);
-	}
-	.welcome .btn {
-		width: 100%;
-	}
-	@media (min-width: 560px) {
-		.welcome .btn {
-			width: auto;
-		}
-	}
-	.newpost {
-		min-height: 36px;
-		padding: 0 14px;
-		font-size: 0.875rem;
-		gap: 6px;
-		flex-shrink: 0;
+		max-width: var(--measure);
 	}
 	.apps-tools {
 		display: inline-flex;
 		align-items: center;
-		gap: 10px;
-	}
-	.findapp {
-		appearance: none;
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		height: 30px;
-		padding: 0 6px 0 10px;
-		border: 1px solid var(--line);
-		border-radius: 999px;
-		background: transparent;
-		color: var(--muted);
-		font: inherit;
-		font-size: 0.85rem;
-		cursor: pointer;
-	}
-	.findapp:hover {
-		border-color: var(--accent);
-		color: var(--text);
+		gap: var(--space-3);
 	}
 	.findapp kbd {
-		font: inherit;
-		font-size: 0.72rem;
-		padding: 0 6px;
-		border: 1px solid var(--line);
-		border-radius: 5px;
-		background: var(--surface-2);
+		margin-left: var(--space-1);
 	}
 	.viewswitch {
 		display: inline-flex;
-		border: 1px solid var(--line);
-		border-radius: 999px;
-		overflow: hidden;
 	}
-	.viewswitch button {
-		appearance: none;
-		border: 0;
-		background: transparent;
-		color: var(--muted);
-		font: inherit;
-		font-size: 0.95rem;
-		line-height: 1;
-		width: 34px;
-		height: 28px;
-		cursor: pointer;
+	.viewswitch .bw-btn {
+		border-color: var(--line-strong);
+		border-radius: 0;
 	}
-	.viewswitch button[aria-pressed="true"] {
-		background: var(--accent);
-		color: var(--accent-ink);
+	.viewswitch .bw-btn:first-child {
+		border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+	}
+	.viewswitch .bw-btn + .bw-btn {
+		margin-left: calc(-1 * var(--field-border));
+		border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+	}
+	/* Selected is green: the green role, which is also this site's signature. */
+	.viewswitch .bw-btn[aria-pressed="true"] {
+		background: var(--green-tint);
+		border-color: var(--green);
+		color: var(--ink);
+		position: relative;
 	}
 	.section__link {
-		text-decoration: none;
 		white-space: nowrap;
-	}
-	.section__link:hover {
-		color: var(--accent);
+		font-size: 14px;
 	}
 	/* Phones: one panel at a time, picked by the tab bar (body[data-tab]). */
 	@media (max-width: 899px) {
@@ -307,7 +242,7 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 		.panel--apps,
 		.home .section:first-child,
 		.side .section {
-			margin-top: 16px;
+			margin-top: var(--space-5);
 		}
 		/* No "/" key on a phone; the button still opens the search. */
 		.findapp kbd {
@@ -327,37 +262,32 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 	@media (min-width: 900px) {
 		.home--split {
 			display: grid;
-			grid-template-columns: minmax(0, 1fr) 360px;
-			gap: 40px;
+			grid-template-columns: minmax(0, 1fr) 340px;
+			gap: var(--space-7);
 			align-items: start;
 		}
 		.side {
 			position: sticky;
-			top: 76px;
-			max-height: calc(100vh - 92px);
+			top: var(--space-5);
+			max-height: calc(100vh - var(--space-6));
 			overflow-y: auto;
 			overscroll-behavior: contain;
 			scrollbar-width: thin;
 		}
-		.side .section:first-child {
-			margin-top: 28px;
-		}
 	}
+	/* EmDash widgets: grouped by hairlines and space, like everything else. */
 	.widgets :global(.widget-area) {
 		display: grid;
-		gap: 16px;
+		gap: var(--space-5);
 	}
 	.widgets :global(.widget) {
-		background: var(--surface);
-		border: 1px solid var(--line);
-		border-radius: var(--radius);
-		box-shadow: var(--shadow);
-		padding: 14px 16px;
+		border-top: var(--hairline) solid var(--line);
+		padding-top: var(--space-3);
 	}
 	.widgets :global(.widget__title) {
-		margin: 0 0 8px;
-		font-family: var(--font-serif);
-		font-size: 1.1rem;
+		margin: 0 0 var(--space-2);
+		font-size: 18px;
+		line-height: 26px;
 		font-weight: 600;
 	}
 	.widgets :global(ul) {
@@ -365,34 +295,25 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 		margin: 0;
 		padding: 0;
 		display: grid;
-		gap: 2px;
 	}
 	.widgets :global(li) {
 		display: flex;
 		justify-content: space-between;
-		gap: 8px;
-		color: var(--muted);
-		font-size: 0.9rem;
+		gap: var(--space-2);
+		color: var(--comment);
+		font-family: var(--font-mono);
+		font-size: 12.5px;
 	}
 	.widgets :global(a) {
-		color: var(--text);
+		font-family: var(--font-sans);
+		font-size: 16px;
 		text-decoration: none;
-		font-weight: 600;
-		padding: 4px 0;
+		padding: var(--space-1) 0;
 	}
 	.widgets :global(a:hover) {
-		color: var(--accent);
-	}
-	.widgets :global(.widget__content > :first-child) {
-		margin-top: 0;
+		text-decoration: underline;
 	}
 	.feed {
-		display: grid;
-		gap: 16px;
-	}
-	.empty {
-		padding: 16px;
-		margin: 0;
-		color: var(--muted);
+		border-top: var(--hairline) solid var(--line);
 	}
 </style>

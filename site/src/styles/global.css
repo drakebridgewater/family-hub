@@ -1,138 +1,94 @@
+/*
+ * The bridgewater.digital style (tokens + components) comes first; this file
+ * only adds the hub's own layout. Colors, type, radii and spacing are tokens
+ * from bridgewater/tokens.css; refresh those with scripts/sync-style.mjs.
+ */
+@import "./bridgewater/tokens.css";
+@import "./bridgewater/bundle.css";
+
 :root {
-	--bg: #f6f3ee;
-	--surface: #ffffff;
-	--surface-2: #efe9e1;
-	--text: #1f1c19;
-	--muted: #6d665e;
-	--line: #e3dcd2;
-	--accent: #c2553a;
-	--accent-ink: #ffffff;
-	--accent-soft: #f6e1d9;
-	--shadow: 0 1px 2px rgb(31 28 25 / 0.06), 0 4px 16px rgb(31 28 25 / 0.06);
-	--radius: 18px;
-	--radius-sm: 12px;
-	--font: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-	--font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-	--gutter: 16px;
-	--max: 640px;
-	--nav-h: 64px;
-	color-scheme: light;
-}
-
-@media (prefers-color-scheme: dark) {
-	:root {
-		--bg: #15130f;
-		--surface: #1f1c18;
-		--surface-2: #2a2621;
-		--text: #f2ede6;
-		--muted: #a59d92;
-		--line: #35302a;
-		--accent: #ef8a6c;
-		--accent-ink: #1b0f0b;
-		--accent-soft: #3a2620;
-		--shadow: 0 1px 2px rgb(0 0 0 / 0.4);
-		color-scheme: dark;
-	}
-}
-
-*,
-*::before,
-*::after {
-	box-sizing: border-box;
+	/* Content column; the home page widens to --page-max. */
+	--max: 720px;
+	--nav-h: 60px;
 }
 
 html {
-	-webkit-text-size-adjust: 100%;
 	scroll-behavior: smooth;
-	scroll-padding-top: 72px;
+	scroll-padding-top: var(--space-5);
 }
 
 body {
-	margin: 0;
-	background: var(--bg);
-	color: var(--text);
-	font-family: var(--font);
-	font-size: 16px;
-	line-height: 1.5;
 	-webkit-font-smoothing: antialiased;
 }
 
 img {
-	max-width: 100%;
 	height: auto;
 	display: block;
-}
-
-a {
-	color: inherit;
-}
-
-:focus-visible {
-	outline: 3px solid var(--accent);
-	outline-offset: 2px;
-	border-radius: 6px;
 }
 
 .frame {
 	width: 100%;
 	max-width: var(--max);
 	margin-inline: auto;
-	padding-inline: var(--gutter);
+	padding-inline: var(--space-4);
+}
+@media (min-width: 720px) {
+	.frame {
+		padding-inline: var(--space-6);
+	}
 }
 
 .section {
-	margin-top: 28px;
+	margin-top: var(--space-6);
 }
 
 .section__head {
 	display: flex;
-	align-items: baseline;
+	align-items: center;
 	justify-content: space-between;
-	gap: 12px;
-	margin-bottom: 12px;
+	flex-wrap: wrap;
+	gap: var(--space-3);
+	margin-bottom: var(--space-4);
 }
 
 .section__title {
-	font-family: var(--font-serif);
-	font-size: 1.35rem;
-	font-weight: 600;
-	letter-spacing: -0.01em;
-	margin: 0;
+	font-size: 24px;
+	line-height: 30px;
 }
 
 .section__meta {
-	color: var(--muted);
-	font-size: 0.875rem;
+	color: var(--comment);
+	font-size: 14px;
+	line-height: 22px;
 }
 
-.card {
-	background: var(--surface);
-	border: 1px solid var(--line);
-	border-radius: var(--radius);
-	box-shadow: var(--shadow);
+/* Small headings inside a section (app groups, days). Sentence case, never uppercase. */
+.label {
+	font: 500 14px/22px var(--font-sans);
+	color: var(--comment);
 }
 
-.btn {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 8px;
-	min-height: 44px;
-	padding: 0 18px;
-	border-radius: 999px;
-	border: 0;
-	font: inherit;
-	font-weight: 600;
-	text-decoration: none;
-	cursor: pointer;
-	background: var(--accent);
-	color: var(--accent-ink);
+.empty {
+	color: var(--comment);
+	padding: var(--space-4) 0;
+	border-top: var(--hairline) solid var(--line);
+	border-bottom: var(--hairline) solid var(--line);
 }
 
-.btn--ghost {
-	background: transparent;
-	color: var(--text);
-	border: 1px solid var(--line);
+/* Menus and dialogs that float over the page: the one place a bordered surface is allowed. */
+.popover {
+	background: var(--page);
+	border: var(--hairline) solid var(--line-strong);
+	border-radius: var(--radius-md);
+	color: var(--ink);
+}
+
+kbd {
+	font: 500 12.5px/18px var(--font-mono);
+	padding: 0 var(--space-1);
+	border: var(--hairline) solid var(--line-strong);
+	border-radius: var(--radius-sm);
+	color: var(--comment);
 }
 
 .visually-hidden {
@@ -144,72 +100,50 @@ a {
 	white-space: nowrap;
 }
 
-/* Article layout shared by posts, pages and archive pages. */
-.back {
-	display: inline-flex;
-	align-items: center;
-	min-height: 44px;
-	color: var(--muted);
-	text-decoration: none;
-	font-weight: 600;
-	font-size: 0.9rem;
-}
-.article {
-	overflow: hidden;
-}
+/* Article layout shared by posts and pages. */
 .article__media img {
 	width: 100%;
+	border-radius: var(--radius-md);
 }
 .article__body {
-	padding: 18px 18px 22px;
+	padding-top: var(--space-5);
 }
 .article__meta {
-	margin: 0;
-	color: var(--muted);
-	font-size: 0.85rem;
+	color: var(--comment);
+	font-size: 14px;
+	line-height: 22px;
 }
 .article__title {
-	font-family: var(--font-serif);
-	font-size: clamp(1.6rem, 7vw, 2.2rem);
-	line-height: 1.15;
-	margin: 6px 0 14px;
+	margin: var(--space-2) 0 var(--space-5);
 }
 .prose {
-	font-size: 1.05rem;
-	line-height: 1.65;
+	max-width: var(--measure);
+	font-size: 17px;
+	line-height: 28px;
+}
+.prose > * + * {
+	margin-top: var(--space-4);
 }
 .prose img {
-	border-radius: var(--radius-sm);
-	margin: 1em 0;
-}
-.prose a {
-	color: var(--accent);
+	border-radius: var(--radius-md);
 }
 
+/* Categories and tags: plain links, separated by space. */
 .chips-row {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 6px;
+	gap: var(--space-1) var(--space-4);
 	margin: 0;
 	padding: 0;
 	list-style: none;
 }
-
 .term {
-	display: inline-flex;
-	align-items: center;
-	min-height: 26px;
-	padding: 0 10px;
-	border-radius: 999px;
-	background: var(--surface-2);
-	color: var(--muted);
-	font-size: 0.78rem;
-	font-weight: 600;
+	font-size: 14px;
+	line-height: 22px;
 	text-decoration: none;
 }
-
 .term:hover {
-	color: var(--accent);
+	text-decoration: underline;
 }
 
 @media (prefers-reduced-motion: reduce) {

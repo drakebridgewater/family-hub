@@ -26,11 +26,12 @@ const policies = [
 <div class="fields" data-app-fields data-new={svc ? undefined : ""}>
 	<label class="field">
 		<span class="field__label">Name</span>
-		<input name="name" required maxlength="60" value={svc?.name} placeholder="Jellyfin" autocomplete="off" />
+		<input class="bw-field__control" name="name" required maxlength="60" value={svc?.name} placeholder="Jellyfin" autocomplete="off" />
 	</label>
 	<label class="field">
 		<span class="field__label">Web address</span>
 		<input
+			class="bw-field__control bw-field__control--mono"
 			name="url"
 			required
 			maxlength="500"
@@ -44,10 +45,10 @@ const policies = [
 	<div class="field field--icon">
 		<label for={`icon-${uid}`} class="field__label">Icon</label>
 		<div class="icon-row">
-			<span class="icon-preview" aria-hidden="true" data-icon-preview>
-				{preview?.kind === "img" ? <img src={preview.value} alt="" width="28" height="28" /> : (preview?.value ?? "🔗")}
+			<span class:list={["bw-tile icon-preview", { "bw-tile--icon": preview && preview.kind !== "letter" }]} aria-hidden="true" data-icon-preview>
+				{preview?.kind === "img" ? <img src={preview.value} alt="" width="28" height="28" /> : preview?.kind === "glyph" ? preview.value : (svc?.name.trim().charAt(0).toUpperCase() || "?")}
 			</span>
-			<input id={`icon-${uid}`} name="icon" maxlength="300" value={svc?.icon} placeholder="jellyfin" autocomplete="off" />
+			<input id={`icon-${uid}`} class="bw-field__control bw-field__control--mono" name="icon" maxlength="300" value={svc?.icon} placeholder="jellyfin" autocomplete="off" />
 		</div>
 		<span class="field__hint">
 			A <a href="https://dashboardicons.com" target="_blank" rel="noopener">dashboard-icons</a> name, an image URL, or an
@@ -56,7 +57,7 @@ const policies = [
 	</div>
 	<label class="field">
 		<span class="field__label">Description <span class="field__opt">optional</span></span>
-		<input name="description" maxlength="120" value={svc?.description} placeholder="Movies & TV" autocomplete="off" />
+		<input class="bw-field__control" name="description" maxlength="120" value={svc?.description} placeholder="Movies & TV" autocomplete="off" />
 	</label>
 	<fieldset class="field">
 		<legend class="field__label">Who sees it</legend>
@@ -65,12 +66,12 @@ const policies = [
 				knownGroups.map((g) => (
 					<label class="check">
 						<input type="checkbox" name="groups" value={g} checked={groups.has(g)} />
-						<span>{g}</span>
+						<span class="bw-mono">{g}</span>
 					</label>
 				))
 			}
 		</div>
-		<input name="otherGroups" value={otherGroups} placeholder="Other groups, comma-separated" autocomplete="off" />
+		<input class="bw-field__control bw-field__control--mono" name="otherGroups" value={otherGroups} placeholder="Other groups, comma-separated" autocomplete="off" />
 		<span class="field__hint">None ticked = everyone who's signed in.</span>
 	</fieldset>
 	<fieldset class="field">
@@ -91,7 +92,7 @@ const policies = [
 		svc && sections.length > 1 && (
 			<label class="field">
 				<span class="field__label">Section</span>
-				<select name="moveTo">
+				<select class="bw-field__control" name="moveTo">
 					{sections.map((s) => (
 						<option value={s.id} selected={s.id === sectionId}>
 							{s.title || "(untitled)"}
@@ -116,12 +117,15 @@ const policies = [
 		const preview = fields.querySelector<HTMLElement>("[data-icon-preview]")!;
 		let guessed = false;
 
+		// No icon: a letter tile from the name, like the launcher draws it.
+		const letter = () => name.value.trim().charAt(0).toUpperCase() || "?";
 		const show = () => {
 			const value = icon.value.trim();
 			const url = value ? src(value) : null;
 			preview.replaceChildren();
+			preview.classList.toggle("bw-tile--icon", !!value);
 			if (!url) {
-				preview.textContent = value || "🔗";
+				preview.textContent = value || letter();
 				return;
 			}
 			const img = new Image(28, 28);
@@ -131,7 +135,8 @@ const policies = [
 					icon.value = "";
 					guessed = false;
 				}
-				preview.textContent = icon.value ? "?" : "🔗";
+				preview.classList.toggle("bw-tile--icon", !!icon.value);
+				preview.textContent = icon.value ? "?" : letter();
 			};
 			img.src = url;
 			preview.append(img);
@@ -139,6 +144,9 @@ const policies = [
 		icon.addEventListener("input", () => {
 			guessed = false;
 			show();
+		});
+		name.addEventListener("input", () => {
+			if (!icon.value.trim()) show();
 		});
 		if (fields.hasAttribute("data-new")) {
 			name.addEventListener("change", () => {
@@ -155,11 +163,11 @@ const policies = [
 <style>
 	.fields {
 		display: grid;
-		gap: 14px;
+		gap: var(--space-4);
 	}
 	.field {
 		display: grid;
-		gap: 4px;
+		gap: var(--space-1);
 		margin: 0;
 		padding: 0;
 		border: 0;
@@ -167,47 +175,25 @@ const policies = [
 	}
 	.field__label {
 		padding: 0;
-		font-weight: 600;
-		font-size: 0.875rem;
+		font: 500 14px/20px var(--font-sans);
 	}
 	.field__opt,
 	.field__hint {
-		color: var(--muted);
+		color: var(--comment);
 		font-weight: 400;
-		font-size: 0.8rem;
-	}
-	.field__hint a {
-		color: var(--accent);
-	}
-	input:not([type="checkbox"], [type="radio"]),
-	select {
-		width: 100%;
-		min-height: 42px;
-		padding: 0 12px;
-		border: 1px solid var(--line);
-		border-radius: 10px;
-		background: var(--bg);
-		color: var(--text);
-		font: inherit;
-	}
-	input:focus,
-	select:focus {
-		outline: 2px solid var(--accent);
-		outline-offset: 0;
+		font-size: 14px;
+		line-height: 22px;
 	}
 	.icon-row {
 		display: flex;
-		gap: 10px;
+		gap: var(--space-3);
 		align-items: center;
 	}
 	.icon-preview {
-		flex: 0 0 42px;
-		height: 42px;
-		border-radius: 10px;
-		display: grid;
-		place-items: center;
-		background: var(--surface-2);
-		font-size: 1.3rem;
+		font-size: 18px;
+	}
+	.icon-preview.bw-tile--icon {
+		font-size: 26px;
 	}
 	.icon-preview :global(img) {
 		width: 28px;
@@ -217,28 +203,21 @@ const policies = [
 	.checks {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 6px;
-		margin-bottom: 6px;
+		gap: var(--space-2) var(--space-4);
+		margin-bottom: var(--space-2);
 	}
 	.check {
 		display: inline-flex;
 		align-items: center;
-		gap: 6px;
-		min-height: 36px;
-		padding: 0 12px;
-		border: 1px solid var(--line);
-		border-radius: 999px;
-		background: var(--surface-2);
-		font-size: 0.875rem;
-		font-weight: 600;
+		gap: var(--space-2);
+		min-height: var(--control-sm);
+		font-size: 14px;
 		cursor: pointer;
 	}
-	.check:has(input:checked) {
-		border-color: var(--accent);
-		background: var(--accent-soft);
-	}
 	.check input {
-		accent-color: var(--accent);
+		width: 18px;
+		height: 18px;
+		accent-color: var(--sig-fill);
 		margin: 0;
 	}
 </style>

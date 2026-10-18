@@ -1,0 +1,46 @@
+---
+/**
+ * An app's icon in a square tile: its own image untinted, an emoji an admin
+ * picked, or (with neither) its first letter in the signature fill.
+ */
+import { resolveIcon } from "../lib/services";
+
+interface Props {
+	name: string;
+	icon?: string;
+	/** Tile size in px; defaults to the --tile token. */
+	size?: number;
+	lazy?: boolean;
+}
+const { name, icon, size, lazy = false } = Astro.props;
+const resolved = resolveIcon(icon);
+const style = size ? `--app-icon:${size}px` : undefined;
+---
+
+{
+	resolved.kind === "img" ? (
+		<span class="bw-tile bw-tile--icon app-icon" style={style} aria-hidden="true">
+			<img src={resolved.value} alt="" width={size ?? 40} height={size ?? 40} loading={lazy ? "lazy" : undefined} decoding="async" />
+		</span>
+	) : resolved.kind === "glyph" ? (
+		<span class="bw-tile bw-tile--icon app-icon app-icon--glyph" style={style} aria-hidden="true">
+			{resolved.value}
+		</span>
+	) : (
+		<span class="bw-tile app-icon" style={style} aria-hidden="true">
+			{name.trim().charAt(0).toUpperCase() || "?"}
+		</span>
+	)
+}
+
+<style>
+	.app-icon {
+		width: var(--app-icon, var(--tile));
+		height: var(--app-icon, var(--tile));
+		font-size: calc(var(--app-icon, var(--tile)) * 0.45);
+	}
+	.app-icon--glyph {
+		font-size: calc(var(--app-icon, var(--tile)) * 0.7);
+		line-height: 1;
+	}
+</style>

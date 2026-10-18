@@ -3,10 +3,18 @@ import Base from "../layouts/Base.astro";
 Astro.response.status = 404;
 ---
 
-<Base title="Not found">
-	<section class="card" style="padding:24px;margin-top:16px;text-align:center">
-		<h1 style="font-family:var(--font-serif);margin:0 0 8px">Hmm, that page wandered off.</h1>
-		<p style="color:var(--muted);margin:0 0 16px">It may have been moved or unpublished.</p>
-		<a href="/" class="btn">Back home</a>
+<Base title="Not found" path={["not-found"]}>
+	<section class="missing">
+		<h1>Page not found</h1>
+		<p class="bw-soft">It may have been moved or unpublished.</p>
+		<a href="/" class="bw-btn bw-btn--primary">Back home</a>
 	</section>
 </Base>
+
+<style>
+	.missing {
+		display: grid;
+		gap: var(--space-3);
+		justify-items: start;
+	}
+</style>

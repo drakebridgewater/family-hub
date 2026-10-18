@@ -23,13 +23,12 @@ const page = createPublicPageContext({
 });
 ---
 
-<Base title={data.title} user={user} page={page}>
-	<a href="/" class="back">← Home</a>
-	<article class="article card">
+<Base title={data.title} user={user} page={page} path={[slug]}>
+	<article class="article">
 		{
 			data.featured_image && (
 				<div class="article__media" {...entry.edit.featured_image}>
-					<Image image={data.featured_image} sizes="(min-width: 640px) 608px, 100vw" priority />
+					<Image image={data.featured_image} sizes="(min-width: 720px) 656px, 100vw" priority />
 				</div>
 			)
 		}

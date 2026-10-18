@@ -5,6 +5,7 @@ import { Comments, CommentForm } from "emdash/ui/comments";
 import Base from "../../layouts/Base.astro";
 import { createPublicPageContext } from "emdash/page";
 import Terms from "../../components/Terms.astro";
+import Icon from "../../components/brand/Icon.astro";
 import { getFamilyUser } from "../../lib/auth";
 import { termsForPost } from "../../lib/terms";
 import { isMembersOnly } from "../../lib/visibility";
@@ -48,29 +49,26 @@ const page = locked
 
 {
 	locked ? (
-		<Base title="Family only" user={user} page={page}>
-			<a href="/" class="back">← Back to the feed</a>
-			<section class="card locked">
-				<p class="locked__icon" aria-hidden="true">🔒</p>
-				<h1 class="locked__title">This post is just for family</h1>
-				<p class="locked__sub">Sign in with your family account to read it.</p>
-				<a href={loginHref} class="btn">Sign in</a>
+		<Base title="Family only" user={user} page={page} path={["posts", "family-only"]}>
+			<section class="bw-panel locked" data-role="teal">
+				<Icon name="lock" size={24} />
+				<h1 class="locked__title">This post is for family</h1>
+				<p class="bw-soft">Sign in with your family account to read it.</p>
+				<a href={loginHref} class="bw-btn bw-btn--primary">Sign in</a>
 			</section>
 		</Base>
 	) : (
-		<Base title={post.data.title} description={post.data.excerpt} user={user} page={page}>
-			<a href="/" class="back">← Back to the feed</a>
-
-			<article class="article card">
+		<Base title={post.data.title} description={post.data.excerpt} user={user} page={page} path={["posts", slug]}>
+			<article class="article">
 				{
 					post.data.featured_image && (
 						<div class="article__media" {...post.edit.featured_image}>
-							<Image image={post.data.featured_image} sizes="(min-width: 640px) 608px, 100vw" priority />
+							<Image image={post.data.featured_image} sizes="(min-width: 720px) 656px, 100vw" priority />
 						</div>
 					)
 				}
 				<div class="article__body">
-					<p class="article__meta">{author} · {dateLabel}</p>
+					<p class="article__meta">{author} · <time class="bw-mono">{dateLabel}</time></p>
 					<h1 class="article__title" {...post.edit.title}>{post.data.title}</h1>
 					<div class="prose">
 						<PortableText value={post.data.content} />
@@ -81,14 +79,12 @@ const page = locked
 				</div>
 			</article>
 
-			<section id="comments" class="section">
+			<section id="comments" class="section comments">
 				<div class="section__head">
 					<h2 class="section__title">Comments</h2>
 				</div>
-				<div class="card comments">
-					<Comments collection="posts" contentId={post.data.id} threaded />
-					<CommentForm collection="posts" contentId={post.data.id} />
-				</div>
+				<Comments collection="posts" contentId={post.data.id} threaded />
+				<CommentForm collection="posts" contentId={post.data.id} />
 			</section>
 		</Base>
 	)
@@ -96,33 +92,48 @@ const page = locked
 
 <style>
 	.locked {
-		margin-top: 8px;
-		padding: 28px 20px;
-		text-align: center;
-	}
-	.locked__icon {
-		margin: 0;
-		font-size: 2rem;
+		display: grid;
+		gap: var(--space-3);
+		justify-items: start;
+		color: var(--teal);
 	}
 	.locked__title {
-		font-family: var(--font-serif);
-		font-size: 1.5rem;
-		margin: 8px 0 0;
+		color: var(--ink);
 	}
-	.locked__sub {
-		margin: 6px 0 18px;
-		color: var(--muted);
+	.locked p {
+		max-width: var(--measure);
 	}
 	.article__terms {
-		margin-top: 18px;
+		margin-top: var(--space-5);
 	}
 	.comments {
-		padding: 16px;
+		border-top: var(--hairline) solid var(--line);
+		padding-top: var(--space-5);
 	}
-	.comments :global(input),
-	.comments :global(textarea) {
-		width: 100%;
-		font: inherit;
+	/* EmDash's comments, themed through their custom properties. */
+	.comments {
+		--ec-form-bg: var(--page);
+		--ec-form-color: var(--ink);
+		--ec-form-border: var(--line-strong);
+		--ec-form-submit-bg: var(--sig-fill);
+		--ec-form-submit-color: var(--on-sig);
+		--ec-form-user-bg: var(--panel);
+		--ec-form-user-bg-dark: var(--panel);
+		--ec-form-user-border: var(--line);
+		--ec-form-success-color: var(--green);
+		--ec-form-error-color: var(--red);
+	}
+	.comments :global(.ec-comments) {
+		--ec-comment-border: var(--hairline) solid var(--line);
+	}
+	.comments :global(.ec-comment-form-field input),
+	.comments :global(.ec-comment-form-field textarea) {
+		border-width: var(--field-border);
+		border-radius: var(--radius-sm);
 		font-size: 16px; /* prevents iOS zoom-on-focus */
+	}
+	.comments :global(.ec-comment-form-submit) {
+		border-radius: var(--radius-sm);
+		font-weight: 500;
 	}
 </style>

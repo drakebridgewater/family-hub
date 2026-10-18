@@ -24,6 +24,6 @@ const posts = user ? entries : entries.filter((p) => !isMembersOnly(p));
 Astro.response.headers.set("Cache-Control", "private, no-store");
 ---
 
-<Base title={term.label} user={user}>
+<Base title={term.label} user={user} path={[taxonomy, slug]}>
 	<PostList posts={posts} heading={taxonomy === "tag" ? `#${term.label}` : term.label} eyebrow={taxonomy === "tag" ? "Tag" : "Category"} />
 </Base>

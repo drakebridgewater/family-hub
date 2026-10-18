@@ -233,9 +233,10 @@ export async function launcherFor(user: FamilyUser, prefs?: Prefs): Promise<Laun
  *   "plex"            -> dashboard-icons CDN (png)
  *   "https://..."     -> used as-is
  *   "🎬" (anything else short) -> rendered as an emoji/text glyph
+ *   ""                -> "letter": the caller draws a letter tile from the app's name
  */
-export function resolveIcon(icon?: string): { kind: "img" | "glyph"; value: string } {
-	if (!icon) return { kind: "glyph", value: "🔗" };
+export function resolveIcon(icon?: string): { kind: "img" | "glyph" | "letter"; value: string } {
+	if (!icon) return { kind: "letter", value: "" };
 	if (/^https?:\/\//.test(icon) || icon.startsWith("/")) return { kind: "img", value: icon };
 	if (/^[a-z0-9-]+$/.test(icon)) {
 		return {

@@ -1,0 +1,42 @@
+---
+/**
+ * The prompt line, user@app:~/place (the bundle's Prompt, rendered on the server).
+ * The user goes home to the family hub, the app to its own homepage, and the
+ * path is the breadcrumb: every segment a link except the last.
+ */
+export type PathSeg = string | { label: string; href?: string };
+
+interface Props {
+	user: string;
+	app: { label: string; href?: string };
+	path: PathSeg[];
+	/** The person's home; the hub is social.bridgewater.digital, so on the hub itself this is "/". */
+	userHref?: string;
+}
+const { user, app, path, userHref = "https://social.bridgewater.digital" } = Astro.props;
+const segs = [{ label: "~", href: "/" }, ...path].map((s) => (typeof s === "string" ? { label: s } : s));
+---
+
+<nav class="bw-prompt" aria-label="You are here">
+	<a class="bw-prompt__user" href={userHref} title="Home">{user}</a><span class="bw-prompt__sep">@</span>{
+		app.href ? (
+			<a class="bw-prompt__host" href={app.href} title={`${app.label} home`}>{app.label}</a>
+		) : (
+			<span class="bw-prompt__host">{app.label}</span>
+		)
+	}<span class="bw-prompt__sep">:</span>{
+		segs.map((seg, i) => {
+			const last = i === segs.length - 1;
+			return (
+				<>
+					{i > 0 && <span class="bw-prompt__sep">/</span>}
+					{seg.href && !last ? (
+						<a class="bw-prompt__seg" href={seg.href}>{seg.label}</a>
+					) : (
+						<span class="bw-prompt__seg" aria-current={last ? "page" : undefined}>{seg.label}</span>
+					)}
+				</>
+			);
+		})
+	}
+</nav>

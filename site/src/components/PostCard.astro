@@ -4,6 +4,7 @@ import { Image } from "emdash/ui";
 import { isMembersOnly } from "../lib/visibility";
 import type { PostTerms } from "../lib/terms";
 import Terms from "./Terms.astro";
+import Icon from "./brand/Icon.astro";
 
 interface Props {
 	post: ContentEntry<InferCollectionData<"posts">>;
@@ -22,23 +23,15 @@ const when = published
 			"day",
 		)
 	: "";
-const initials = author
-	.replace(/^The\s+/i, "")
-	.split(/\s+/)
-	.map((p: string) => p[0])
-	.join("")
-	.slice(0, 2)
-	.toUpperCase();
 ---
 
-<article class="post card">
+<article class="post">
 	<header class="post__head">
-		<span class="post__avatar" aria-hidden="true">{initials}</span>
 		<span class="post__who">
-			<strong>{author}</strong>
-			{published && <time datetime={new Date(published).toISOString()}>{when}</time>}
+			<span class="post__author">{author}</span>
+			{published && <time class="bw-mono" datetime={new Date(published).toISOString()}>{when}</time>}
 		</span>
-		{familyOnly && <span class="post__badge" title="Only signed-in family can see this post">🔒 Family</span>}
+		{familyOnly && <span class="bw-status post__badge" data-state="private" title="Only signed-in family can see this post">family only</span>}
 	</header>
 
 	<a href={href} class="post__link">
@@ -49,7 +42,7 @@ const initials = author
 	{
 		post.data.featured_image && (
 			<a href={href} class="post__media" tabindex="-1" aria-hidden="true" {...post.edit.featured_image}>
-				<Image image={post.data.featured_image} sizes="(min-width: 640px) 608px, 100vw" priority={priority} />
+				<Image image={post.data.featured_image} sizes="(min-width: 720px) 656px, 100vw" priority={priority} />
 			</a>
 		)
 	}
@@ -61,90 +54,81 @@ const initials = author
 	)}
 
 	<footer class="post__foot">
-		<a href={`${href}#comments`}>💬 Comments</a>
-		<a href={href}>Read more →</a>
+		<a href={`${href}#comments`}>Comments</a>
+		<a href={href} class="post__more">Read more <Icon name="arrow-right" size={16} /></a>
 	</footer>
 </article>
 
 <style>
+	/* A feed is a column of posts separated by hairlines, not a stack of cards. */
 	.post {
-		overflow: hidden;
-	}
-	.post__terms {
-		padding: 0 16px 12px;
-	}
-	.post__badge {
-		margin-left: auto;
-		align-self: center;
-		padding: 2px 10px;
-		border-radius: 999px;
-		background: var(--accent-soft);
-		color: var(--accent);
-		font-size: 0.75rem;
-		font-weight: 700;
-		white-space: nowrap;
+		padding: var(--space-5) 0;
+		border-bottom: var(--hairline) solid var(--line);
 	}
 	.post__head {
 		display: flex;
 		align-items: center;
-		gap: 10px;
-		padding: 14px 16px 0;
-	}
-	.post__avatar {
-		width: 36px;
-		height: 36px;
-		border-radius: 50%;
-		display: grid;
-		place-items: center;
-		background: var(--accent-soft);
-		color: var(--accent);
-		font-weight: 700;
-		font-size: 0.8rem;
-		flex-shrink: 0;
+		gap: var(--space-3);
 	}
 	.post__who {
-		display: grid;
-		line-height: 1.25;
-		font-size: 0.9rem;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0 var(--space-3);
+	}
+	.post__author {
+		font-weight: 500;
 	}
 	.post__who time {
-		color: var(--muted);
-		font-size: 0.8rem;
+		color: var(--comment);
+		font-size: 12.5px;
+		line-height: 18px;
+	}
+	.post__badge {
+		margin-left: auto;
 	}
 	.post__link {
 		display: block;
+		color: var(--ink);
 		text-decoration: none;
-		padding: 10px 16px 12px;
+		padding: var(--space-2) 0 var(--space-3);
 	}
-	.post__title {
-		font-family: var(--font-serif);
-		font-size: 1.2rem;
-		line-height: 1.25;
-		margin: 0;
+	.post__link:hover .post__title {
+		color: var(--teal);
+		text-decoration: underline;
+		text-decoration-thickness: var(--hairline);
+		text-underline-offset: 4px;
 	}
 	.post__excerpt {
-		margin: 6px 0 0;
-		color: var(--muted);
+		margin-top: var(--space-1);
+		color: var(--soft);
+		max-width: var(--measure);
 	}
 	.post__media :global(img) {
 		width: 100%;
 		max-height: 70vh;
 		object-fit: cover;
+		border-radius: var(--radius-md);
+	}
+	.post__terms {
+		margin-top: var(--space-3);
 	}
 	.post__foot {
 		display: flex;
 		justify-content: space-between;
-		padding: 12px 16px;
-		border-top: 1px solid var(--line);
-		font-size: 0.875rem;
-		font-weight: 600;
+		margin-top: var(--space-3);
+		font-size: 14px;
+		line-height: 22px;
 	}
 	.post__foot a {
 		text-decoration: none;
-		color: var(--muted);
-		min-height: 24px;
 	}
-	.post__foot a:last-child {
-		color: var(--accent);
+	.post__foot a:hover {
+		text-decoration: underline;
+	}
+	.post__more {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
 	}
 </style>

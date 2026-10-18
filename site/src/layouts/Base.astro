@@ -110,7 +110,7 @@ const accountLinks = user
 			<div class="bw-strip" aria-hidden="true"></div>
 			<div class="bw-container bw-header__bar">
 				<Wordmark href="/" />
-				{/* The guide's Header nav: links, apps, account. Below 720px all of it folds into "Menu". */}
+				{/* The guide's Header nav: links, account, apps. Below 900px all of it folds into "Menu". */}
 				<nav class="bw-nav" aria-label={menu?.label ?? "Site"}>
 					{
 						menuItems.length > 0 && (
@@ -160,26 +160,9 @@ const accountLinks = user
 						)
 					}
 					{
-						hasApps && (
-							<div class="bw-nav__actions">
-								<button
-									type="button"
-									class="bw-btn bw-btn--secondary bw-btn--icon"
-									data-launcher-open
-									aria-haspopup="dialog"
-									aria-controls="launcher"
-									aria-label="Apps"
-									title="Apps (press /)"
-								>
-									<Icon name="grid" />
-								</button>
-							</div>
-						)
-					}
-					{
 						user ? (
 							<details class="bw-nav__account">
-								<summary class="bw-btn bw-btn--secondary" aria-label={`Account menu for ${user.name}`}>
+								<summary class="bw-btn" aria-label={`Account menu for ${user.name}`}>
 									{firstName}
 								</summary>
 								<div class="bw-nav__panel">
@@ -191,11 +174,26 @@ const accountLinks = user
 								</div>
 							</details>
 						) : (
-							<a href="/login" class="bw-btn bw-btn--secondary bw-nav__signin">Sign in</a>
+							<a href="/login" class="bw-btn bw-nav__signin">Sign in</a>
+						)
+					}
+					{
+						hasApps && (
+							<button
+								type="button"
+								class="bw-btn bw-btn--icon bw-nav__apps"
+								data-launcher-open
+								aria-haspopup="dialog"
+								aria-controls="launcher"
+								aria-label="Apps"
+								title="Apps (press /)"
+							>
+								<Icon name="grid" />
+							</button>
 						)
 					}
 					<details class="bw-nav__drop">
-						<summary class="bw-btn bw-btn--secondary">Menu</summary>
+						<summary class="bw-btn">Menu</summary>
 						<ul class="bw-nav__panel" role="list">
 							{menuItems.map((item) => (
 								<li>
@@ -216,7 +214,7 @@ const accountLinks = user
 								</li>
 							))}
 							{hasApps && (
-								<li>
+								<li class:list={{ "bw-nav__section": menuItems.length > 0 }}>
 									<button type="button" data-launcher-open aria-haspopup="dialog" aria-controls="launcher">Find an app</button>
 								</li>
 							)}

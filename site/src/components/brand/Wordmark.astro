@@ -1,0 +1,42 @@
+---
+/** The bridgewater.digital logotype with the mark (the bundle's Wordmark, rendered on the server). */
+import shapes from "../../styles/bridgewater/shapes.json";
+
+interface Props {
+	/** Logotype height in px. */
+	height?: number;
+	href?: string;
+}
+const { height = 28, href } = Astro.props;
+const { lt, mark: m } = shapes;
+const ox = 39;
+const oy = 6;
+const vb = [-1, -2, 42 + lt.w, 35];
+const k = (height * 1.5) / 32;
+const Tag = href ? "a" : "span";
+---
+
+<Tag class="bw-wordmark" href={href} aria-label="bridgewater.digital">
+	<svg
+		class="bw-lt"
+		viewBox={vb.join(" ")}
+		width={Math.round(vb[2] * k * 10) / 10}
+		height={Math.round(vb[3] * k * 10) / 10}
+		aria-hidden="true"
+		focusable="false"
+	>
+		<g transform="scale(0.5)">
+			<path class="bw-mark-ridge" d={m.ridge} />
+			<path class="bw-mark-trace" d={m.trace} />
+			{m.pads.map(([cx, cy, r]) => <circle class="bw-mark-pad" cx={cx} cy={cy} r={r} />)}
+			<circle class="bw-mark-dot" cx={m.dot[0]} cy={m.dot[1]} r={m.dot[2]} />
+		</g>
+		<g class="bw-lt-glyph" transform={`translate(${ox} ${oy})`}>
+			{lt.paths.map(([x, d]) => <path transform={`translate(${x} 0)`} d={d as string} />)}
+		</g>
+		<path class="bw-lt-trace" d={lt.hbus} />
+		{lt.idots.map((x) => <circle class="bw-lt-idot" cx={x + ox} cy={1.9 + oy} r="1.35" />)}
+		<circle class="bw-lt-pad" cx={lt.dotx + ox} cy={13.1 + oy} r="2.8" />
+		<circle class="bw-lt-dot" cx={lt.dotx + ox} cy={13.1 + oy} r="1.7" />
+	</svg>
+</Tag>

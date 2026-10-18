@@ -4,14 +4,15 @@
  * Opens with the button, "/" or ⌘K / Ctrl+K; type to filter, ↑↓ and Enter to open.
  */
 import type { Launcher } from "../lib/services";
-import { resolveIcon } from "../lib/services";
+import AppIcon from "./AppIcon.astro";
+import Icon from "./brand/Icon.astro";
 
 interface Props {
 	launcher: Launcher;
 }
 const { launcher } = Astro.props;
 const groups = [
-	...(launcher.favorites.length ? [{ id: "fav", title: "★ Favorites", services: launcher.favorites, fav: true }] : []),
+	...(launcher.favorites.length ? [{ id: "fav", title: "Favorites", services: launcher.favorites, fav: true }] : []),
 	...launcher.sections.map((s) => ({ ...s, fav: false })),
 ];
 ---
@@ -19,13 +20,19 @@ const groups = [
 {
 	groups.length > 0 && (
 		<>
-			<button type="button" class="launch" data-launcher-open aria-haspopup="dialog" aria-controls="launcher" title="Apps (press /)">
-				<span aria-hidden="true">▦</span>
-				<span class="visually-hidden">Apps</span>
+			<button
+				type="button"
+				class="bw-btn bw-btn--secondary bw-btn--sm bw-btn--icon"
+				data-launcher-open
+				aria-haspopup="dialog"
+				aria-controls="launcher"
+				aria-label="Apps"
+				title="Apps (press /)"
+			>
+				<Icon name="grid" />
 			</button>
-			<dialog id="launcher" class="launcher card" aria-label="Apps">
+			<dialog id="launcher" class="launcher popover" aria-label="Apps">
 				<div class="launcher__head">
-					<span class="launcher__glass" aria-hidden="true">⌕</span>
 					<input
 						type="search"
 						class="launcher__input"
@@ -36,33 +43,30 @@ const groups = [
 						spellcheck="false"
 					/>
 					<form method="dialog">
-						<button class="launcher__close" aria-label="Close">esc</button>
+						<button class="bw-btn bw-btn--secondary bw-btn--sm bw-btn--icon" aria-label="Close">
+							<Icon name="close" />
+						</button>
 					</form>
 				</div>
 				<div class="launcher__list" id="launcher-list">
 					{groups.map((g) => (
 						<section class="launcher__group" data-fav={g.fav ? "" : undefined}>
-							<h3 class="launcher__title">{g.title}</h3>
+							<h3 class="label launcher__title">{g.title}</h3>
 							<ul role="list">
-								{g.services.map((svc) => {
-									const icon = resolveIcon(svc.icon);
-									return (
-										<li>
-											<a
-												class="row"
-												href={svc.url}
-												rel="noopener"
-												data-search={`${svc.name} ${svc.description ?? ""} ${g.fav ? "" : g.title}`.toLowerCase()}
-											>
-												<span class="row__icon" aria-hidden="true">
-													{icon.kind === "img" ? <img src={icon.value} alt="" width="24" height="24" loading="lazy" /> : icon.value}
-												</span>
-												<span class="row__name">{svc.name}</span>
-												{svc.description && <span class="row__desc">{svc.description}</span>}
-											</a>
-										</li>
-									);
-								})}
+								{g.services.map((svc) => (
+									<li>
+										<a
+											class="row"
+											href={svc.url}
+											rel="noopener"
+											data-search={`${svc.name} ${svc.description ?? ""} ${g.fav ? "" : g.title}`.toLowerCase()}
+										>
+											<AppIcon name={svc.name} icon={svc.icon} size={28} lazy />
+											<span class="row__name">{svc.name}</span>
+											{svc.description && <span class="row__desc">{svc.description}</span>}
+										</a>
+									</li>
+								))}
 							</ul>
 						</section>
 					))}
@@ -148,30 +152,11 @@ const groups = [
 </script>
 
 <style>
-	.launch {
-		appearance: none;
-		flex-shrink: 0;
-		width: 40px;
-		height: 40px;
-		border-radius: 50%;
-		border: 1px solid var(--line);
-		background: transparent;
-		color: var(--text);
-		font: inherit;
-		font-size: 1.15rem;
-		line-height: 1;
-		cursor: pointer;
-	}
-	.launch:hover {
-		border-color: var(--accent);
-		color: var(--accent);
-	}
 	.launcher {
 		width: min(560px, calc(100vw - 24px));
 		max-height: min(640px, calc(100dvh - 48px));
 		margin: 10vh auto auto;
 		padding: 0;
-		color: var(--text);
 		overflow: hidden;
 		flex-direction: column;
 	}
@@ -179,46 +164,32 @@ const groups = [
 		display: flex;
 	}
 	.launcher::backdrop {
-		background: rgb(20 17 14 / 0.4);
-		backdrop-filter: blur(2px);
+		background: color-mix(in srgb, var(--ink) 35%, transparent);
 	}
 	.launcher__head {
 		display: flex;
 		align-items: center;
-		gap: 10px;
-		padding: 10px 12px 10px 16px;
-		border-bottom: 1px solid var(--line);
-	}
-	.launcher__glass {
-		color: var(--muted);
-		font-size: 1.3rem;
+		gap: var(--space-3);
+		padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
+		border-bottom: var(--hairline) solid var(--line);
 	}
 	.launcher__input {
 		flex: 1;
 		min-width: 0;
 		border: 0;
 		background: transparent;
-		color: inherit;
-		font: inherit;
-		font-size: 1.05rem;
-		padding: 8px 0;
+		color: var(--ink);
+		font: 400 17px/26px var(--font-sans);
+		padding: var(--space-2) 0;
 		outline: none;
 	}
-	.launcher__close {
-		appearance: none;
-		border: 1px solid var(--line);
-		border-radius: 8px;
-		background: var(--surface-2);
-		color: var(--muted);
-		font: inherit;
-		font-size: 0.75rem;
-		padding: 4px 8px;
-		cursor: pointer;
+	.launcher__input::placeholder {
+		color: var(--comment);
 	}
 	.launcher__list {
 		overflow-y: auto;
 		overscroll-behavior: contain;
-		padding: 6px 8px 10px;
+		padding: 0 var(--space-4) var(--space-3);
 	}
 	.launcher__group ul {
 		list-style: none;
@@ -226,76 +197,52 @@ const groups = [
 		padding: 0;
 	}
 	.launcher__title {
-		margin: 10px 8px 4px;
-		font-size: 0.72rem;
-		font-weight: 700;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		color: var(--muted);
+		margin: var(--space-4) 0 var(--space-1);
 	}
 	.row {
 		display: grid;
-		grid-template-columns: 32px auto 1fr;
+		grid-template-columns: 28px auto 1fr;
 		align-items: center;
-		gap: 12px;
+		gap: var(--space-3);
 		min-height: 44px;
-		padding: 6px 8px;
+		padding: var(--space-1) var(--space-2);
+		margin: 0 calc(-1 * var(--space-2));
 		border-radius: var(--radius-sm);
+		color: var(--ink);
 		text-decoration: none;
 	}
 	.row:hover,
-	.row.is-active,
 	.row:focus-visible {
-		background: var(--surface-2);
+		background: var(--panel);
 		outline: none;
 	}
 	.row.is-active {
-		box-shadow: inset 3px 0 0 var(--accent);
-	}
-	.row__icon {
-		width: 32px;
-		height: 32px;
-		border-radius: 9px;
-		display: grid;
-		place-items: center;
-		background: var(--surface-2);
-		font-size: 1.1rem;
-	}
-	.row__icon img {
-		width: 22px;
-		height: 22px;
-		object-fit: contain;
+		background: var(--sig-tint);
 	}
 	.row__name {
-		font-weight: 600;
+		font-weight: 500;
 		white-space: nowrap;
 	}
 	.row__desc {
-		color: var(--muted);
-		font-size: 0.85rem;
+		color: var(--comment);
+		font-size: 14px;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
 	.launcher__none {
-		margin: 16px 8px;
-		color: var(--muted);
+		margin: var(--space-4) 0;
+		color: var(--comment);
 	}
 	.launcher__foot {
-		margin: 0;
-		padding: 8px 16px;
-		border-top: 1px solid var(--line);
-		color: var(--muted);
-		font-size: 0.75rem;
+		padding: var(--space-2) var(--space-4);
+		border-top: var(--hairline) solid var(--line);
+		color: var(--comment);
+		font-size: 12.5px;
+		line-height: 18px;
 	}
 	kbd {
-		font: inherit;
-		font-size: 0.72rem;
-		padding: 1px 5px;
 		margin-right: 2px;
-		border: 1px solid var(--line);
-		border-radius: 5px;
-		background: var(--surface-2);
 	}
 	/* Phones: no keyboard, so skip the hints and use the full screen height. */
 	@media (max-width: 559px) {

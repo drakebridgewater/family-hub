@@ -13,20 +13,20 @@ const grouped = groupByDay(items, days);
 
 {
 	grouped.length === 0 ? (
-		<p class="empty card">Nothing on the calendar {days === 1 ? "today" : `in the next ${days} days`}. 🌤️</p>
+		<p class="empty">Nothing on the calendar {days === 1 ? "today" : `in the next ${days} days`}.</p>
 	) : (
 		<ol class="days" role="list">
 			{grouped.map((day) => (
-				<li class="day card">
-					<h3 class="day__label">{day.label}</h3>
+				<li class="day">
+					<h3 class="label day__label">{day.label}</h3>
 					<ul class="events" role="list">
 						{day.items.map((ev) => (
-							<li class="event" style={`--cal:${ev.color}`}>
-								<span class="event__time">{ev.time}</span>
+							<li class="event">
+								<span class="event__time bw-mono">{ev.time}</span>
 								<span class="event__body">
 									<span class="event__title">{ev.title}</span>
 									<span class="event__meta">
-										{ev.calendar}
+										<span class="event__cal" style={`--cal:${ev.color}`}>{ev.calendar}</span>
 										{ev.location && ` · ${ev.location}`}
 									</span>
 								</span>
@@ -44,55 +44,56 @@ const grouped = groupByDay(items, days);
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		display: grid;
-		gap: 10px;
+		border-top: var(--hairline) solid var(--line);
 	}
 	.day {
-		padding: 14px 16px;
+		padding: var(--space-3) 0 var(--space-4);
+		border-bottom: var(--hairline) solid var(--line);
 	}
 	.day__label {
-		margin: 0 0 8px;
-		font-size: 0.85rem;
-		font-weight: 700;
-		color: var(--accent);
+		margin-bottom: var(--space-2);
 	}
 	.events {
 		list-style: none;
 		margin: 0;
 		padding: 0;
 		display: grid;
-		gap: 10px;
+		gap: var(--space-3);
 	}
 	.event {
 		display: grid;
-		grid-template-columns: 72px 1fr;
-		gap: 10px;
-		align-items: start;
+		grid-template-columns: 76px 1fr;
+		gap: var(--space-3);
+		align-items: baseline;
 	}
 	.event__time {
-		font-size: 0.85rem;
-		font-variant-numeric: tabular-nums;
-		color: var(--muted);
-		padding-top: 1px;
+		font-size: 12.5px;
+		line-height: 18px;
+		color: var(--comment);
 	}
 	.event__body {
 		display: grid;
-		border-left: 3px solid var(--cal);
-		padding-left: 10px;
 		min-width: 0;
 	}
 	.event__title {
-		font-weight: 600;
+		font-weight: 500;
 		overflow-wrap: anywhere;
 	}
 	.event__meta {
-		font-size: 0.8rem;
-		color: var(--muted);
+		font-size: 14px;
+		line-height: 20px;
+		color: var(--comment);
 		overflow-wrap: anywhere;
 	}
-	.empty {
-		padding: 16px;
-		margin: 0;
-		color: var(--muted);
+	/* The calendar's own color as a dot; its name says which calendar. */
+	.event__cal::before {
+		content: "";
+		display: inline-block;
+		width: var(--space-2);
+		height: var(--space-2);
+		margin-right: var(--space-1);
+		border-radius: 50%;
+		background: var(--cal);
+		vertical-align: 1px;
 	}
 </style>

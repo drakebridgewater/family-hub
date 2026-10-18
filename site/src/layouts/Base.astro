@@ -1,12 +1,22 @@
 ---
 import { getMenu, getSiteSettings } from "emdash";
 import { createPublicPageContext } from "emdash/page";
-import { EmDashBodyEnd, EmDashBodyStart, EmDashHead, Image } from "emdash/ui";
+import { EmDashBodyEnd, EmDashBodyStart, EmDashHead } from "emdash/ui";
 import type { FamilyUser } from "../lib/auth";
 import { logoutUrl, securityUrl } from "../lib/auth";
 import { canPost, EDITOR_URL } from "../lib/editor-roles";
 import { isAppAdmin, launcherFor, type Launcher } from "../lib/services";
 import AppLauncher from "../components/AppLauncher.astro";
+import Icon from "../components/brand/Icon.astro";
+import Prompt, { type PathSeg } from "../components/brand/Prompt.astro";
+import Skyline from "../components/brand/Skyline.astro";
+import ThemeToggle from "../components/brand/ThemeToggle.astro";
+import Wordmark from "../components/brand/Wordmark.astro";
+import "@fontsource/fira-sans/400.css";
+import "@fontsource/fira-sans/500.css";
+import "@fontsource/fira-sans/600.css";
+import "@fontsource/fira-code/400.css";
+import "@fontsource/fira-code/500.css";
 import "../styles/global.css";
 
 interface Props {
@@ -17,11 +27,15 @@ interface Props {
 	 * Bottom tab bar (home page only). On phones each tab shows one panel of
 	 * the page; on desktop everything is visible and the bar is hidden.
 	 */
-	tabs?: Array<{ id: string; label: string; icon: string }>;
+	tabs?: Array<{ id: string; label: string; icon: Parameters<typeof Icon>[0]["name"] }>;
 	/** Tab shown first on phones. */
 	activeTab?: string;
 	/** Wider frame for the two-column desktop home page. */
 	wide?: boolean;
+	/** Breadcrumb after ~ in the prompt line, e.g. ["settings"] or [{ label: "tag", href: "/tag" }, "summer"]. */
+	path?: PathSeg[];
+	/** The skyline illustration above the footer: the home page only. */
+	skyline?: boolean;
 	/**
 	 * EmDash page context (SEO tags, plugin contributions). Content pages pass
 	 * one built from their entry; everything else gets a plain one.
@@ -31,7 +45,7 @@ interface Props {
 	launcher?: Launcher;
 }
 
-const { title, description, user = null, tabs = [], activeTab, wide = false } = Astro.props;
+const { title, description, user = null, tabs = [], activeTab, wide = false, path = [], skyline = false } = Astro.props;
 const [settings, menu] = await Promise.all([getSiteSettings(), getMenu("primary")]);
 const menuItems = menu?.items ?? [];
 const siteTitle = settings?.title || "The Bridgewaters";
@@ -43,141 +57,136 @@ const page =
 const isCurrent = (url: string) => url === Astro.url.pathname;
 const launcher = user ? (Astro.props.launcher ?? (await launcherFor(user))) : null;
 
-const initials = (user?.name ?? "")
-	.split(/\s+/)
-	.map((p) => p[0])
-	.join("")
-	.slice(0, 2)
-	.toUpperCase();
+// The prompt names this app by its host (social.bridgewater.digital -> "social").
+const appName = (() => {
+	try {
+		return new URL(process.env.EMDASH_SITE_URL ?? "").hostname.split(".")[0] || "social";
+	} catch {
+		return "social";
+	}
+})();
+const firstName = user?.name.split(" ")[0] || user?.username;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" data-sig="green">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-		<meta name="theme-color" content="#f6f3ee" media="(prefers-color-scheme: light)" />
-		<meta name="theme-color" content="#15130f" media="(prefers-color-scheme: dark)" />
+		<meta name="theme-color" content="#fafcfc" media="(prefers-color-scheme: light)" />
+		<meta name="theme-color" content="#0a1b1e" media="(prefers-color-scheme: dark)" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
+		{/* Before paint: the saved theme, else the system's (same key as the bundle's ThemeToggle). */}
+		<script is:inline>
+			(function () {
+				var t = null;
+				try {
+					t = localStorage.getItem("bw-theme");
+				} catch (e) {}
+				if (t !== "dark" && t !== "light") t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+				document.documentElement.setAttribute("data-theme", t);
+			})();
+		</script>
 		{!settings?.favicon && <link rel="icon" href="/favicon.svg" type="image/svg+xml" />}
-		<link rel="apple-touch-icon" href="/favicon.svg" />
+		<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+		<link rel="manifest" href="/site.webmanifest" />
 		<title>{pageTitle}</title>
 		<EmDashHead page={page} />
 	</head>
 	<body class:list={{ "has-tabs": tabs.length > 0, wide }} data-tab={tabs.length ? activeTab ?? tabs[0].id : undefined}>
 		<EmDashBodyStart page={page} />
-		<header class="topbar">
-			<div class="frame topbar__inner">
-				<a href="/" class="brand">
+		<header class="bw-header">
+			<div class="bw-strip" aria-hidden="true"></div>
+			<div class="frame bw-header__bar">
+				<Wordmark href="/" />
+				<ThemeToggle />
+			</div>
+			<div class="bw-header__rule"></div>
+			<div class="frame bw-header__where where">
+				<Prompt user={user?.username ?? "you"} app={{ label: appName, href: "/" }} userHref="/" path={path} />
+				<div class="where__tools">
+					{launcher && <AppLauncher launcher={launcher} />}
 					{
-						settings?.logo ? (
-							<span class="brand__logo">
-								<Image image={settings.logo} alt="" width={32} height={32} />
-							</span>
+						user ? (
+							<details class="account">
+								<summary class="bw-btn bw-btn--secondary bw-btn--sm" aria-label={`Account menu for ${user.name}`}>
+									{firstName}
+								</summary>
+								<div class="account__menu popover">
+									<p class="account__who">
+										<strong>{user.name}</strong>
+										<span class="bw-mono">{user.email || user.username}</span>
+									</p>
+									{canPost(user.groups) && (
+										<a href={EDITOR_URL} class="bw-btn bw-btn--secondary">Write and edit</a>
+									)}
+									<a href="/settings" class="bw-btn bw-btn--quiet">Customize home</a>
+									{isAppAdmin(user) && <a href="/admin/apps" class="bw-btn bw-btn--quiet">Manage apps</a>}
+									<a href={securityUrl()} class="bw-btn bw-btn--quiet">Password and security</a>
+									<a href={logoutUrl()} class="bw-btn bw-btn--quiet">Sign out</a>
+								</div>
+							</details>
 						) : (
-							<span class="brand__mark" aria-hidden="true">❦</span>
+							<a href="/login" class="bw-btn bw-btn--secondary bw-btn--sm">Sign in</a>
 						)
 					}
-					<span class="brand__name">{siteTitle}</span>
-				</a>
-				{
-					menuItems.length > 0 && (
-						<nav class="menu" aria-label={menu?.label ?? "Site"}>
-							{/* Desktop: inline links. Phones: a "Menu" dropdown. */}
-							<ul class="menu__inline" role="list">
-								{menuItems.map((item) => (
-									<li>
-										{item.children.length ? (
-											<details class="menu__sub">
-												<summary>{item.label}</summary>
-												<ul class="card menu__panel" role="list">
-													{item.children.map((child) => (
-														<li>
-															<a href={child.url} target={child.target || undefined} rel={child.target === "_blank" ? "noopener" : undefined} title={child.titleAttr || undefined} class={child.cssClasses || undefined}>
-																{child.label}
-															</a>
-														</li>
-													))}
-												</ul>
-											</details>
-										) : (
-											<a
-												href={item.url}
-												target={item.target || undefined}
-												rel={item.target === "_blank" ? "noopener" : undefined}
-												title={item.titleAttr || undefined}
-												class={item.cssClasses || undefined}
-												aria-current={isCurrent(item.url) ? "page" : undefined}
-											>
-												{item.label}
-											</a>
-										)}
-									</li>
-								))}
-							</ul>
-							<details class="menu__drop">
-								<summary class="btn btn--ghost menu__button">Menu</summary>
-								<ul class="card menu__panel" role="list">
-									{menuItems.map((item) => (
-										<li>
-											<a href={item.url} target={item.target || undefined} rel={item.target === "_blank" ? "noopener" : undefined}>
-												{item.label}
-											</a>
-											{item.children.length > 0 && (
-												<ul role="list" class="menu__children">
-													{item.children.map((child) => (
-														<li>
-															<a href={child.url} target={child.target || undefined} rel={child.target === "_blank" ? "noopener" : undefined}>
-																{child.label}
-															</a>
-														</li>
-													))}
-												</ul>
-											)}
-										</li>
-									))}
-								</ul>
-							</details>
-						</nav>
-					)
-				}
-				{
-					launcher && <AppLauncher launcher={launcher} />
-				}
-				{
-					user ? (
-						<details class="account">
-							<summary class="avatar" aria-label={`Account menu for ${user.name}`}>
-								{initials || "🙂"}
-							</summary>
-							<div class="account__menu card">
-								<p class="account__who">
-									<strong>{user.name}</strong>
-									<span>{user.email || user.username}</span>
-								</p>
-								{canPost(user.groups) && (
-									<a href={EDITOR_URL} class="btn">
-										<span aria-hidden="true">✍️</span> Write &amp; edit
-									</a>
-								)}
-								<a href="/settings" class="btn btn--ghost">Customize home</a>
-								{isAppAdmin(user) && (
-									<a href="/admin/apps" class="btn btn--ghost">Manage apps</a>
-								)}
-								<a href={securityUrl()} class="btn btn--ghost">Password &amp; security</a>
-								<a href={logoutUrl()} class="btn btn--ghost">Sign out</a>
-							</div>
-						</details>
-					) : (
-						<a href="/login" class="btn signin">Family sign in</a>
-					)
-				}
+				</div>
 			</div>
 		</header>
+
+		{
+			menuItems.length > 0 && (
+				<nav class="frame sitenav" aria-label={menu?.label ?? "Site"}>
+					<ul role="list">
+						{menuItems.map((item) => (
+							<li>
+								{item.children.length ? (
+									<details class="sitenav__sub">
+										<summary>{item.label}</summary>
+										<ul class="popover sitenav__panel" role="list">
+											<li>
+												<a href={item.url} target={item.target || undefined} rel={item.target === "_blank" ? "noopener" : undefined}>
+													{item.label}
+												</a>
+											</li>
+											{item.children.map((child) => (
+												<li>
+													<a href={child.url} target={child.target || undefined} rel={child.target === "_blank" ? "noopener" : undefined} title={child.titleAttr || undefined} class={child.cssClasses || undefined}>
+														{child.label}
+													</a>
+												</li>
+											))}
+										</ul>
+									</details>
+								) : (
+									<a
+										href={item.url}
+										target={item.target || undefined}
+										rel={item.target === "_blank" ? "noopener" : undefined}
+										title={item.titleAttr || undefined}
+										class={item.cssClasses || undefined}
+										aria-current={isCurrent(item.url) ? "page" : undefined}
+									>
+										{item.label}
+									</a>
+								)}
+							</li>
+						))}
+					</ul>
+				</nav>
+			)
+		}
 
 		<main class="frame main">
 			<slot />
 		</main>
+
+		{skyline && (
+			<div class="frame skyline">
+				<Skyline />
+			</div>
+		)}
 
 		<footer class="frame footer">
 			<p>{tagline}</p>
@@ -193,7 +202,7 @@ const initials = (user?.name ?? "")
 							data-tab-link={t.id}
 							aria-current={(activeTab ?? tabs[0].id) === t.id ? "page" : undefined}
 						>
-							<span class="tabbar__icon" aria-hidden="true">{t.icon}</span>
+							<Icon name={t.icon} size={22} />
 							<span>{t.label}</span>
 						</a>
 					))}
@@ -225,193 +234,125 @@ const initials = (user?.name ?? "")
 </html>
 
 <style>
-	.topbar {
-		position: sticky;
-		top: 0;
-		z-index: 20;
-		background: color-mix(in srgb, var(--bg) 85%, transparent);
-		backdrop-filter: saturate(1.4) blur(12px);
-		-webkit-backdrop-filter: saturate(1.4) blur(12px);
-		border-bottom: 1px solid var(--line);
-		padding-top: env(safe-area-inset-top);
+	.bw-header__bar :global(.bw-lt) {
+		height: 28px;
+		width: auto;
 	}
-	.topbar__inner {
+	@media (max-width: 559px) {
+		.bw-header__bar :global(.bw-lt) {
+			height: 22px;
+		}
+	}
+	.where {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 12px;
-		min-height: 60px;
+		gap: var(--space-3);
 	}
-	.brand {
+	.where__tools {
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		text-decoration: none;
-		min-width: 0;
-		/* Menu, apps button and avatar line up on the right. */
-		margin-right: auto;
-	}
-	.brand__mark {
-		color: var(--accent);
-		font-size: 1.4rem;
-	}
-	.brand__name {
-		font-family: var(--font-serif);
-		font-weight: 600;
-		font-size: 1.15rem;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-	.brand__logo :global(img) {
-		width: 32px;
-		height: 32px;
-		object-fit: contain;
-		border-radius: 8px;
-	}
-	.menu {
-		min-width: 0;
-	}
-	.menu ul {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-	}
-	.menu a,
-	.menu summary {
-		text-decoration: none;
-		font-weight: 600;
-		font-size: 0.9rem;
-		cursor: pointer;
-	}
-	.menu__inline {
-		display: none;
-	}
-	.menu__drop,
-	.menu__sub {
-		position: relative;
-	}
-	.menu__button {
-		list-style: none;
-		min-height: 38px;
-		padding: 0 14px;
-		font-size: 0.9rem;
-	}
-	.menu summary::-webkit-details-marker {
-		display: none;
-	}
-	.menu__panel {
-		position: absolute;
-		right: 0;
-		top: calc(100% + 8px);
-		z-index: 30;
-		min-width: 220px;
-		max-width: calc(100vw - 32px);
-		padding: 8px;
-		display: grid;
-	}
-	.menu__panel a {
-		display: block;
-		padding: 10px 12px;
-		border-radius: var(--radius-sm);
-	}
-	.menu__panel a:hover {
-		background: var(--surface-2);
-	}
-	.menu__children {
-		padding-left: 12px !important;
-	}
-	@media (min-width: 900px) {
-		.menu__drop {
-			display: none;
-		}
-		.menu__inline {
-			display: flex;
-			align-items: center;
-			gap: 4px;
-		}
-		.menu__inline > li > a,
-		.menu__sub > summary {
-			display: inline-flex;
-			align-items: center;
-			min-height: 38px;
-			padding: 0 12px;
-			border-radius: 999px;
-			color: var(--muted);
-		}
-		.menu__inline > li > a:hover,
-		.menu__sub > summary:hover,
-		.menu__inline a[aria-current="page"] {
-			color: var(--text);
-			background: var(--surface-2);
-		}
-		.menu__sub > summary::after {
-			content: " ▾";
-			font-size: 0.75em;
-		}
-		.menu__sub .menu__panel {
-			left: 0;
-			right: auto;
-		}
-	}
-	.signin {
-		min-height: 38px;
-		padding: 0 14px;
-		font-size: 0.9rem;
+		gap: var(--space-2);
 		flex-shrink: 0;
 	}
 	.account {
 		position: relative;
 	}
-	.avatar {
+	.account > summary {
 		list-style: none;
-		width: 40px;
-		height: 40px;
-		border-radius: 50%;
-		display: grid;
-		place-items: center;
-		background: var(--accent);
-		color: var(--accent-ink);
-		font-weight: 700;
-		font-size: 0.9rem;
-		cursor: pointer;
 	}
-	.avatar::-webkit-details-marker {
+	.account > summary::-webkit-details-marker {
 		display: none;
 	}
 	.account__menu {
 		position: absolute;
 		right: 0;
-		top: calc(100% + 8px);
-		width: min(260px, calc(100vw - 32px));
-		padding: 16px;
+		top: calc(100% + var(--space-2));
+		z-index: 30;
+		width: min(280px, calc(100vw - 32px));
+		padding: var(--space-4);
 		display: grid;
-		gap: 12px;
+		gap: var(--space-1);
+	}
+	.account__menu .bw-btn {
+		justify-content: flex-start;
 	}
 	.account__who {
-		margin: 0;
 		display: grid;
-		font-size: 0.9rem;
+		margin-bottom: var(--space-3);
 	}
 	.account__who span {
-		color: var(--muted);
+		color: var(--comment);
+		font-size: 14px;
 		overflow-wrap: anywhere;
 	}
+	.sitenav {
+		padding-top: var(--space-3);
+	}
+	.sitenav ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.sitenav > ul {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1) var(--space-5);
+	}
+	.sitenav a,
+	.sitenav summary {
+		color: var(--teal);
+		text-decoration: none;
+		cursor: pointer;
+	}
+	.sitenav a:hover,
+	.sitenav summary:hover,
+	.sitenav a[aria-current="page"] {
+		text-decoration: underline;
+		text-decoration-thickness: var(--hairline);
+		text-underline-offset: 3px;
+	}
+	.sitenav__sub {
+		position: relative;
+	}
+	.sitenav__sub > summary {
+		list-style: none;
+	}
+	.sitenav__sub > summary::-webkit-details-marker {
+		display: none;
+	}
+	.sitenav__panel {
+		position: absolute;
+		left: 0;
+		top: calc(100% + var(--space-2));
+		z-index: 30;
+		min-width: 220px;
+		max-width: calc(100vw - 32px);
+		padding: var(--space-2) var(--space-4);
+	}
+	.sitenav__panel a {
+		display: block;
+		padding: var(--space-2) 0;
+	}
 	.wide {
-		--max: 1120px;
+		--max: var(--page-max);
 	}
 	.main {
-		padding-top: 8px;
-		padding-bottom: 32px;
+		padding-top: var(--space-5);
+		padding-bottom: var(--space-6);
+	}
+	.skyline {
+		margin-top: var(--space-6);
 	}
 	.footer {
-		color: var(--muted);
-		font-size: 0.85rem;
-		text-align: center;
-		padding-bottom: 32px;
+		color: var(--comment);
+		font-size: 14px;
+		line-height: 22px;
+		padding-top: var(--space-4);
+		padding-bottom: var(--space-6);
 	}
 	.has-tabs .footer {
-		padding-bottom: calc(var(--nav-h) + 32px + env(safe-area-inset-bottom));
+		padding-bottom: calc(var(--nav-h) + var(--space-6) + env(safe-area-inset-bottom));
 	}
 	.tabbar {
 		position: fixed;
@@ -419,10 +360,8 @@ const initials = (user?.name ?? "")
 		z-index: 20;
 		display: flex;
 		justify-content: space-around;
-		background: color-mix(in srgb, var(--surface) 92%, transparent);
-		backdrop-filter: blur(12px);
-		-webkit-backdrop-filter: blur(12px);
-		border-top: 1px solid var(--line);
+		background: var(--page);
+		border-top: var(--hairline) solid var(--line-strong);
 		padding-bottom: env(safe-area-inset-bottom);
 	}
 	.tabbar__item {
@@ -432,17 +371,12 @@ const initials = (user?.name ?? "")
 		place-content: center;
 		justify-items: center;
 		gap: 2px;
-		font-size: 0.75rem;
-		font-weight: 600;
-		color: var(--muted);
+		font: 500 12.5px/18px var(--font-sans);
+		color: var(--comment);
 		text-decoration: none;
 	}
 	.tabbar__item[aria-current="page"] {
-		color: var(--accent);
-	}
-	.tabbar__icon {
-		font-size: 1.3rem;
-		line-height: 1;
+		color: var(--sig);
 	}
 	/* On wider screens the tab bar is unnecessary: everything fits. */
 	@media (min-width: 900px) {
@@ -450,7 +384,7 @@ const initials = (user?.name ?? "")
 			display: none;
 		}
 		.has-tabs .footer {
-			padding-bottom: 32px;
+			padding-bottom: var(--space-6);
 		}
 	}
 </style>

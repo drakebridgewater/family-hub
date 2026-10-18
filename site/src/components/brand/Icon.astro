@@ -1,0 +1,25 @@
+---
+/** An outline icon from the bridgewater set, drawn in currentColor (the bundle's Icon, rendered on the server). */
+import shapes from "../../styles/bridgewater/shapes.json";
+
+interface Props {
+	name: keyof typeof shapes.icons;
+	size?: number;
+	/** Omit for decorative icons. */
+	title?: string;
+	class?: string;
+}
+const { name, size = 20, title, class: className } = Astro.props;
+---
+
+<svg
+	class:list={["bw-icon", className]}
+	viewBox="0 0 24 24"
+	width={size}
+	height={size}
+	focusable="false"
+	role={title ? "img" : undefined}
+	aria-label={title}
+	aria-hidden={title ? undefined : "true"}
+	set:html={shapes.icons[name]}
+/>

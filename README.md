@@ -71,6 +71,22 @@ forged header just gets the public view.
   Categories, Tags, Archives, Recent posts and Menu widgets work; Search needs SQLite, so skip it on Postgres.
 - **Site settings:** title, tagline, logo and favicon. SEO and plugin head tags come from `<EmDashHead>`.
 
+## Look and feel
+
+The site uses the shared bridgewater.digital style ([style.bridgewater](https://github.com/drakebridgewater/style.bridgewater)),
+with **green** as its signature hue. The header follows that guide: signature strip, wordmark and theme toggle, an ink rule,
+then the prompt line `user@social:~/place`. The user name and `social` both lead back to the home page here, and the
+path is the breadcrumb.
+
+The tokens, component CSS, logo geometry and favicons are copied into `site/src/styles/bridgewater/` and `site/public/`
+and committed, so builds never fetch them. After changing the style repo:
+
+```bash
+cd site && node scripts/sync-style.mjs ../../style.bridgewater   # or set STYLE_DIR
+```
+
+Fira Sans and Fira Code are self-hosted through `@fontsource`.
+
 ## Develop locally
 
 ```bash

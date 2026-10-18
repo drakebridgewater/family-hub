@@ -1,18 +1,15 @@
 ---
 import type { Service } from "../lib/services";
-import { resolveIcon } from "../lib/services";
+import AppIcon from "./AppIcon.astro";
 
 interface Props {
 	svc: Service;
 }
 const { svc } = Astro.props;
-const icon = resolveIcon(svc.icon);
 ---
 
 <a class="tile" href={svc.url} rel="noopener" title={svc.description}>
-	<span class="tile__icon" aria-hidden="true">
-		{icon.kind === "img" ? <img src={icon.value} alt="" width="40" height="40" decoding="async" /> : icon.value}
-	</span>
+	<span class="tile__icon"><AppIcon name={svc.name} icon={svc.icon} size={48} /></span>
 	<span class="tile__name">{svc.name}</span>
 	{svc.description && <span class="tile__desc">{svc.description}</span>}
 </a>
@@ -22,41 +19,25 @@ const icon = resolveIcon(svc.icon);
 	.tile {
 		display: grid;
 		justify-items: center;
-		gap: 6px;
+		gap: var(--space-2);
 		text-align: center;
+		color: var(--ink);
 		text-decoration: none;
-		padding: 4px 0;
+		padding: var(--space-1) 0;
 		border-radius: var(--radius-sm);
 		-webkit-tap-highlight-color: transparent;
 	}
-	.tile__icon {
-		width: 60px;
-		height: 60px;
-		border-radius: 16px;
-		display: grid;
-		place-items: center;
-		font-size: 1.8rem;
-		background: var(--surface);
-		border: 1px solid var(--line);
-		box-shadow: var(--shadow);
-		transition: transform 0.15s ease;
-	}
-	.tile:hover .tile__icon {
-		border-color: var(--accent);
-	}
-	.tile:active .tile__icon {
-		transform: scale(0.92);
-	}
-	.tile__icon img {
-		width: 38px;
-		height: 38px;
-		object-fit: contain;
+	.tile:hover .tile__name {
+		color: var(--teal);
+		text-decoration: underline;
+		text-decoration-thickness: var(--hairline);
+		text-underline-offset: 3px;
 	}
 	.tile__name {
 		max-width: 100%;
-		font-size: 0.75rem;
-		font-weight: 600;
-		line-height: 1.2;
+		font-size: 13px;
+		font-weight: 500;
+		line-height: 18px;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -65,84 +46,66 @@ const icon = resolveIcon(svc.icon);
 		display: none;
 	}
 
-	/* Detailed rows: always for "detailed"; for "auto" at in-between widths (tablet apps tab). */
+	/* Detailed: a row with the description, separated by hairlines (ServiceGrid draws them). */
 	:global(.apps[data-view="detailed"]) .tile {
-		grid-template-columns: 44px 1fr;
+		grid-template-columns: 40px 1fr;
 		grid-template-rows: auto auto;
 		justify-items: start;
 		align-items: center;
-		column-gap: 12px;
+		column-gap: var(--space-3);
 		row-gap: 0;
 		text-align: left;
-		padding: 10px 12px;
-		background: var(--surface);
-		border: 1px solid var(--line);
-	}
-	:global(.apps[data-view="detailed"]) .tile:hover {
-		border-color: var(--accent);
+		padding: var(--space-3) 0;
 	}
 	:global(.apps[data-view="detailed"]) .tile__icon {
 		grid-row: span 2;
-		width: 44px;
-		height: 44px;
-		border-radius: 12px;
-		box-shadow: none;
-		background: var(--surface-2);
-		border: 0;
 	}
-	:global(.apps[data-view="detailed"]) .tile__icon img {
-		width: 30px;
-		height: 30px;
+	:global(.apps[data-view="detailed"]) .tile__icon :global(.app-icon) {
+		width: 40px;
+		height: 40px;
 	}
 	:global(.apps[data-view="detailed"]) .tile__name {
-		font-size: 0.95rem;
+		font-size: 16px;
+		line-height: 24px;
 		align-self: end;
 		white-space: normal;
 	}
 	:global(.apps[data-view="detailed"]) .tile__desc {
 		display: block;
-		font-size: 0.8rem;
-		color: var(--muted);
+		font-size: 14px;
+		line-height: 20px;
+		color: var(--comment);
 		align-self: start;
 	}
 	@container apps (min-width: 520px) and (max-width: 899px) {
 		:global(.apps[data-view="auto"]) .tile {
-			grid-template-columns: 44px 1fr;
+			grid-template-columns: 40px 1fr;
 			grid-template-rows: auto auto;
 			justify-items: start;
 			align-items: center;
-			column-gap: 12px;
+			column-gap: var(--space-3);
 			row-gap: 0;
 			text-align: left;
-			padding: 10px 12px;
-			background: var(--surface);
-			border: 1px solid var(--line);
-		}
-		:global(.apps[data-view="auto"]) .tile:hover {
-			border-color: var(--accent);
+			padding: var(--space-3) 0;
 		}
 		:global(.apps[data-view="auto"]) .tile__icon {
 			grid-row: span 2;
-			width: 44px;
-			height: 44px;
-			border-radius: 12px;
-			box-shadow: none;
-			background: var(--surface-2);
-			border: 0;
 		}
-		:global(.apps[data-view="auto"]) .tile__icon img {
-			width: 30px;
-			height: 30px;
+		:global(.apps[data-view="auto"]) .tile__icon :global(.app-icon) {
+			width: 40px;
+			height: 40px;
 		}
 		:global(.apps[data-view="auto"]) .tile__name {
-			font-size: 0.95rem;
+			font-size: 16px;
+			line-height: 24px;
 			align-self: end;
 			white-space: normal;
 		}
 		:global(.apps[data-view="auto"]) .tile__desc {
 			display: block;
-			font-size: 0.8rem;
-			color: var(--muted);
+			font-size: 14px;
+			line-height: 20px;
+			color: var(--comment);
 			align-self: start;
 		}
 	}

@@ -1,7 +1,8 @@
 ---
 import Base from "../layouts/Base.astro";
 import { getFamilyUser } from "../lib/auth";
-import { isAppAdmin, prefMatches, resolveIcon, servicesFor } from "../lib/services";
+import AppIcon from "../components/AppIcon.astro";
+import { isAppAdmin, prefMatches, servicesFor } from "../lib/services";
 import { maxScheduleDays, scheduleEnabled } from "../lib/calendar";
 import { DAY_CHOICES, getPrefs, savePrefs, type AppView, type HomeTab } from "../lib/prefs";
 
@@ -57,15 +58,14 @@ const viewChoices: Array<{ id: AppView; label: string }> = [
 const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 ---
 
-<Base title="Customize" user={user}>
-	<a href="/" class="back">← Home</a>
-	<h1 class="title">Customize your home</h1>
-	<p class="sub">These settings are just for you, {user.name.split(" ")[0]}, and follow you to any device.</p>
+<Base title="Customize" user={user} path={["settings"]}>
+	<h1>Customize your home</h1>
+	<p class="sub bw-soft">These settings are just for you, {user.name.split(" ")[0]}, and follow you to any device.</p>
 
 	<form method="post" class="form">
-		<fieldset class="card group" id="start">
+		<fieldset class="group" id="start">
 			<legend>Open to</legend>
-			<p class="hint">Which tab you land on when you open the hub on your phone.</p>
+			<p class="hint bw-field__hint">Which tab you land on when you open the hub on your phone.</p>
 			<div class="chips">
 				{
 					tabChoices.map((t) => (
@@ -80,9 +80,9 @@ const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 
 		{
 			showSchedule && (
-				<fieldset class="card group" id="days">
+				<fieldset class="group" id="days">
 					<legend>Calendar</legend>
-					<p class="hint">How far ahead "Coming up" shows.</p>
+					<p class="hint bw-field__hint">How far ahead "Coming up" shows.</p>
 					<div class="chips">
 						{dayChoices.map((d) => (
 							<label class="chip">
@@ -96,9 +96,9 @@ const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 		}
 		{!showSchedule && <input type="hidden" name="days" value={prefs.days} />}
 
-		<fieldset class="card group" id="apps">
+		<fieldset class="group" id="apps">
 			<legend>Apps</legend>
-			<p class="hint">
+			<p class="hint bw-field__hint">
 				Layout: Compact shows icons only, Detailed adds each app's description, Automatic picks by screen space.
 			</p>
 			<div class="chips chips--spaced">
@@ -111,46 +111,42 @@ const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 					))
 				}
 			</div>
-			<p class="hint">
+			<p class="hint bw-field__hint">
 				Star <span aria-hidden="true">★</span> your favorites to keep them up top (the rest fold under "All apps"), and turn
 				off the ones you don't use.
-				{isAdmin && <><br /><a href="/admin/apps">Manage apps for everyone →</a></>}
+				{isAdmin && <><br /><a href="/admin/apps">Manage apps for everyone</a></>}
 			</p>
 			{
 				sections.map((section) => (
 					<div class="apps-section">
-						{section.title && <h2 class="apps-section__title">{section.title}</h2>}
+						{section.title && <h2 class="label apps-section__title">{section.title}</h2>}
 						<ul class="apps" role="list">
-							{section.services.map((svc) => {
-								const icon = resolveIcon(svc.icon);
-								return (
-									<li>
-										<div class="app">
-											<span class="app__icon" aria-hidden="true">
-												{icon.kind === "img" ? <img src={icon.value} alt="" width="28" height="28" /> : icon.value}
-											</span>
-											<span class="app__name">
-												{svc.name}
-												{svc.policy === "always" && <span class="app__note">Always shown</span>}
-											</span>
-											<label class="star" title={`Favorite ${svc.name}`}>
-												<input type="checkbox" name="pin" value={svc.id} checked={pinned.has(svc.id) || pinned.has(svc.url)} />
-												<span aria-hidden="true">★</span>
-												<span class="visually-hidden">Favorite {svc.name}</span>
-											</label>
+							{section.services.map((svc) => (
+								<li>
+									<div class="app">
+										<AppIcon name={svc.name} icon={svc.icon} size={32} />
+										<span class="app__name">
+											{svc.name}
+											{svc.policy === "always" && <span class="app__note">Always shown</span>}
+										</span>
+										<label class="star" title={`Favorite ${svc.name}`}>
+											<input type="checkbox" name="pin" value={svc.id} checked={pinned.has(svc.id) || pinned.has(svc.url)} />
+											<span aria-hidden="true">★</span>
+											<span class="visually-hidden">Favorite {svc.name}</span>
+										</label>
+										<label class="show">
 											<input
-												class="switch"
 												type="checkbox"
 												name="show"
 												value={svc.id}
 												checked={svc.policy === "always" || !prefMatches(hidden, svc)}
 												disabled={svc.policy === "always"}
-												aria-label={`Show ${svc.name}`}
 											/>
-										</div>
-									</li>
-								);
-							})}
+											<span>Show<span class="visually-hidden"> {svc.name}</span></span>
+										</label>
+									</div>
+								</li>
+							))}
 						</ul>
 					</div>
 				))
@@ -158,61 +154,47 @@ const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 		</fieldset>
 
 		<div class="actions">
-			<button type="submit" class="btn">Save</button>
-			<a href="/" class="btn btn--ghost">Cancel</a>
+			<button type="submit" class="bw-btn bw-btn--primary">Save</button>
+			<a href="/" class="bw-btn bw-btn--secondary">Cancel</a>
 		</div>
 	</form>
 </Base>
 
 <style>
-	.back {
-		display: inline-block;
-		margin-top: 12px;
-		color: var(--muted);
-		text-decoration: none;
-		font-size: 0.9rem;
-	}
-	.title {
-		font-family: var(--font-serif);
-		font-size: clamp(1.5rem, 6vw, 2rem);
-		line-height: 1.15;
-		margin: 8px 0 0;
-	}
 	.sub {
-		margin: 4px 0 0;
-		color: var(--muted);
+		margin-top: var(--space-2);
 	}
 	.form {
-		display: grid;
-		gap: 16px;
-		margin-top: 20px;
+		margin-top: var(--space-5);
+		border-top: var(--hairline) solid var(--line);
 	}
+	/* Each setting is a block separated by a hairline, not a card. */
 	.group {
 		margin: 0;
-		padding: 16px;
+		padding: var(--space-5) 0;
+		border: 0;
+		border-bottom: var(--hairline) solid var(--line);
 		min-width: 0;
 	}
 	legend {
 		float: left;
 		width: 100%;
 		padding: 0;
-		font-family: var(--font-serif);
-		font-size: 1.2rem;
+		font-size: 18px;
+		line-height: 26px;
 		font-weight: 600;
 	}
 	.hint {
 		clear: both;
-		margin: 2px 0 12px;
-		color: var(--muted);
-		font-size: 0.875rem;
+		margin: var(--space-1) 0 var(--space-3);
 	}
 	.chips {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 8px;
+		gap: var(--space-2);
 	}
 	.chips--spaced {
-		margin-bottom: 16px;
+		margin-bottom: var(--space-5);
 	}
 	.chip input {
 		position: absolute;
@@ -222,85 +204,71 @@ const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 	.chip span {
 		display: inline-flex;
 		align-items: center;
-		min-height: 40px;
-		padding: 0 16px;
-		border-radius: 999px;
-		border: 1px solid var(--line);
-		background: var(--surface-2);
-		font-weight: 600;
-		font-size: 0.9rem;
+		min-height: var(--control);
+		padding: 0 var(--space-4);
+		border: var(--field-border) solid var(--line-strong);
+		border-radius: var(--radius-sm);
+		font: 500 14px/20px var(--font-sans);
 		cursor: pointer;
 	}
+	.chip span:hover {
+		background: var(--panel);
+	}
+	/* Selected is green (the green role, which is also this site's signature). */
 	.chip input:checked + span {
-		background: var(--accent);
-		border-color: var(--accent);
-		color: var(--accent-ink);
+		background: var(--green-tint);
+		border-color: var(--green);
 	}
 	.chip input:focus-visible + span {
-		outline: 3px solid var(--accent);
+		outline: var(--focus-width) solid var(--sig);
 		outline-offset: 2px;
 	}
 	.apps-section + .apps-section {
-		margin-top: 14px;
+		margin-top: var(--space-5);
 	}
 	.apps-section__title {
-		margin: 0 0 4px;
-		font-size: 0.8rem;
-		font-weight: 700;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		color: var(--muted);
+		margin-bottom: var(--space-1);
 	}
 	.apps {
 		list-style: none;
 		margin: 0;
 		padding: 0;
+		border-top: var(--hairline) solid var(--line);
 	}
-	.apps li + li {
-		border-top: 1px solid var(--line);
+	.apps li {
+		border-bottom: var(--hairline) solid var(--line);
 	}
 	.app {
 		display: grid;
-		grid-template-columns: 36px 1fr auto auto;
+		grid-template-columns: 32px 1fr auto auto;
 		align-items: center;
-		gap: 12px;
+		gap: var(--space-3);
 		min-height: 52px;
-	}
-	.app__icon {
-		width: 36px;
-		height: 36px;
-		border-radius: 10px;
-		display: grid;
-		place-items: center;
-		background: var(--surface-2);
-		font-size: 1.2rem;
-	}
-	.app__icon img {
-		width: 24px;
-		height: 24px;
-		object-fit: contain;
+		padding: var(--space-2) 0;
 	}
 	.app__name {
-		font-weight: 600;
+		font-weight: 500;
 		min-width: 0;
 		overflow-wrap: anywhere;
 	}
 	.app__note {
 		display: block;
-		font-weight: 400;
-		font-size: 0.8rem;
-		color: var(--muted);
+		font: 400 12.5px/18px var(--font-mono);
+		color: var(--comment);
 	}
 	.star {
 		position: relative;
 		display: grid;
 		place-items: center;
-		width: 40px;
-		height: 40px;
-		border-radius: 50%;
-		font-size: 1.35rem;
-		color: var(--line);
+		width: var(--control);
+		height: var(--control);
+		border-radius: var(--radius-sm);
+		font-size: 20px;
+		color: var(--line-strong);
 		cursor: pointer;
+	}
+	.star:hover {
+		background: var(--panel);
 	}
 	.star input {
 		position: absolute;
@@ -308,59 +276,36 @@ const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 		pointer-events: none;
 	}
 	.star:has(input:checked) {
-		color: #e9a23b;
+		color: var(--sig);
 	}
 	.star:has(input:focus-visible) {
-		outline: 3px solid var(--accent);
+		outline: var(--focus-width) solid var(--sig);
 	}
-	/* iOS-style toggle */
-	.switch {
-		appearance: none;
-		margin: 0;
-		width: 48px;
-		height: 28px;
-		border-radius: 999px;
-		background: var(--line);
-		position: relative;
+	.show {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		font-size: 14px;
 		cursor: pointer;
-		transition: background 0.15s ease;
 	}
-	.switch::after {
-		content: "";
-		position: absolute;
-		top: 3px;
-		left: 3px;
-		width: 22px;
-		height: 22px;
-		border-radius: 50%;
-		background: #fff;
-		box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
-		transition: transform 0.15s ease;
+	.show input {
+		width: 18px;
+		height: 18px;
+		margin: 0;
+		accent-color: var(--sig-fill);
 	}
-	.switch:checked {
-		background: var(--accent);
-	}
-	.switch:checked::after {
-		transform: translateX(20px);
-	}
-	.switch:disabled {
-		opacity: 0.5;
+	/* Always-shown apps: grey, never faded. */
+	.show:has(input:disabled) {
+		color: var(--comment);
 		cursor: not-allowed;
 	}
 	.actions {
 		display: flex;
-		gap: 10px;
+		gap: var(--space-3);
 		position: sticky;
 		bottom: 0;
-		padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
-		background: linear-gradient(transparent, var(--bg) 30%);
-	}
-	.actions .btn {
-		flex: 1;
-	}
-	@media (min-width: 560px) {
-		.actions .btn {
-			flex: 0 0 auto;
-		}
+		padding: var(--space-3) 0 calc(var(--space-3) + env(safe-area-inset-bottom));
+		background: var(--page);
+		border-top: var(--hairline) solid var(--line);
 	}
 </style>

@@ -17,7 +17,7 @@ const total = sections.reduce((n, s) => n + s.services.length, 0);
 
 {
 	sections.length === 0 ? (
-		<p class="empty card">
+		<p class="empty">
 			{isAdmin ? (
 				<>No apps yet. <a href="/admin/apps">Add the first one</a>.</>
 			) : (
@@ -28,9 +28,7 @@ const total = sections.reduce((n, s) => n + s.services.length, 0);
 		<div class="apps" data-view={view}>
 			{favorites.length > 0 && (
 				<div class="group group--fav">
-					<h3 class="group__title">
-						<span aria-hidden="true">★</span> Favorites
-					</h3>
+					<h3 class="label group__title">Favorites</h3>
 					<ul class="grid" role="list">
 						{favorites.map((svc) => (
 							<li>
@@ -42,13 +40,13 @@ const total = sections.reduce((n, s) => n + s.services.length, 0);
 			)}
 			{/* Always a <details>; without favorites it's open and the summary is hidden. */}
 			<details class="all" open={favorites.length === 0} data-foldable={favorites.length > 0 ? "" : undefined}>
-				<summary class="all__toggle">
-					All apps <span class="all__count">{total}</span>
+				<summary class="bw-btn bw-btn--secondary bw-btn--sm all__toggle">
+					All apps <span class="bw-count">{total}</span>
 				</summary>
 				<div class="groups">
 					{sections.map((section) => (
 						<div class="group">
-							{section.title && <h3 class="group__title">{section.title}</h3>}
+							{section.title && <h3 class="label group__title">{section.title}</h3>}
 							<ul class="grid" role="list">
 								{section.services.map((svc) => (
 									<li>
@@ -89,18 +87,10 @@ const total = sections.reduce((n, s) => n + s.services.length, 0);
 	}
 	.group + .group,
 	.group--fav + .all {
-		margin-top: 18px;
+		margin-top: var(--space-5);
 	}
 	.group__title {
-		margin: 0 0 10px;
-		font-size: 0.8rem;
-		font-weight: 700;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		color: var(--muted);
-	}
-	.group--fav .group__title span {
-		color: var(--accent);
+		margin-bottom: var(--space-3);
 	}
 	/* Icon grid, phone-home-screen style (compact, and auto when narrow). */
 	.grid {
@@ -109,55 +99,44 @@ const total = sections.reduce((n, s) => n + s.services.length, 0);
 		padding: 0;
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
-		gap: 14px 8px;
+		gap: var(--space-4) var(--space-2);
 	}
 	.all:not([data-foldable]) > .all__toggle {
 		display: none;
 	}
 	.all__toggle {
 		list-style: none;
-		display: inline-flex;
-		align-items: center;
-		gap: 8px;
-		min-height: 36px;
-		padding: 0 14px;
-		border: 1px solid var(--line);
-		border-radius: 999px;
-		font-size: 0.875rem;
-		font-weight: 600;
-		cursor: pointer;
 	}
 	.all__toggle::-webkit-details-marker {
 		display: none;
 	}
 	.all__toggle::after {
-		content: "▾";
-		font-size: 0.8em;
-		color: var(--muted);
+		content: "+";
+		font-family: var(--font-mono);
+		color: var(--comment);
 	}
 	.all[open] > .all__toggle::after {
-		content: "▴";
-	}
-	.all__toggle:hover {
-		border-color: var(--accent);
-	}
-	.all__count {
-		color: var(--muted);
-		font-weight: 500;
+		content: "\2212";
 	}
 	.all[data-foldable][open] > .groups {
-		margin-top: 16px;
+		margin-top: var(--space-5);
 	}
 
-	/* Detailed: rows with descriptions, as many columns as fit. */
+	/* Detailed: rows separated by hairlines, as many columns as fit. */
 	.apps[data-view="detailed"] .grid {
 		grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-		gap: 10px;
+		gap: 0 var(--space-6);
+	}
+	.apps[data-view="detailed"] .grid > li {
+		border-bottom: var(--hairline) solid var(--line);
 	}
 	@container apps (min-width: 520px) and (max-width: 899px) {
 		.apps[data-view="auto"] .grid {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: 10px;
+			gap: 0 var(--space-6);
+		}
+		.apps[data-view="auto"] .grid > li {
+			border-bottom: var(--hairline) solid var(--line);
 		}
 	}
 
@@ -169,7 +148,7 @@ const total = sections.reduce((n, s) => n + s.services.length, 0);
 		.apps:not([data-view="detailed"]) .groups {
 			display: flex;
 			flex-wrap: wrap;
-			gap: 20px 44px;
+			gap: var(--space-5) var(--space-7);
 		}
 		.apps:not([data-view="detailed"]) .group + .group {
 			margin-top: 0;
@@ -177,16 +156,10 @@ const total = sections.reduce((n, s) => n + s.services.length, 0);
 		.apps:not([data-view="detailed"]) .grid {
 			display: flex;
 			flex-wrap: wrap;
-			gap: 12px 6px;
+			gap: var(--space-3) var(--space-1);
 		}
 		.apps:not([data-view="detailed"]) .grid > li {
 			width: 84px;
 		}
-	}
-
-	.empty {
-		padding: 16px;
-		margin: 0;
-		color: var(--muted);
 	}
 </style>

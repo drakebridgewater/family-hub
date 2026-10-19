@@ -12,11 +12,7 @@ import Prompt, { type PathSeg } from "../components/brand/Prompt.astro";
 import Skyline from "../components/brand/Skyline.astro";
 import ThemeToggle from "../components/brand/ThemeToggle.astro";
 import Wordmark from "../components/brand/Wordmark.astro";
-import "@fontsource/fira-sans/400.css";
-import "@fontsource/fira-sans/500.css";
-import "@fontsource/fira-sans/600.css";
-import "@fontsource/fira-code/400.css";
-import "@fontsource/fira-code/500.css";
+import tokens from "../styles/bridgewater/tokens.json";
 import "../styles/global.css";
 
 interface Props {
@@ -30,8 +26,6 @@ interface Props {
 	tabs?: Array<{ id: string; label: string; icon: Parameters<typeof Icon>[0]["name"] }>;
 	/** Tab shown first on phones. */
 	activeTab?: string;
-	/** Wider frame for the two-column desktop home page. */
-	wide?: boolean;
 	/** Breadcrumb after ~ in the prompt line, e.g. ["settings"] or [{ label: "tag", href: "/tag" }, "summer"]. */
 	path?: PathSeg[];
 	/** The skyline illustration above the footer: the home page only. */
@@ -45,26 +39,35 @@ interface Props {
 	launcher?: Launcher;
 }
 
-const { title, description, user = null, tabs = [], activeTab, wide = false, path = [], skyline = false } = Astro.props;
+const { title, description, user = null, tabs = [], activeTab, path = [], skyline = false } = Astro.props;
 const [settings, menu] = await Promise.all([getSiteSettings(), getMenu("primary")]);
 const menuItems = menu?.items ?? [];
 const siteTitle = settings?.title || "The Bridgewaters";
 const tagline = settings?.tagline || "";
 const pageTitle = title ? `${title} · ${siteTitle}` : siteTitle;
-const page =
+const siteUrl = process.env.EMDASH_SITE_URL || Astro.url.origin;
+const basePage =
 	Astro.props.page ??
 	createPublicPageContext({ Astro, kind: "custom", title: title ?? siteTitle, description: description ?? tagline, siteName: siteTitle });
+// The brand's social card, unless the page or the site settings name their own.
+const page =
+	basePage.image || basePage.seo?.ogImage || (settings as any)?.seo?.defaultOgImage
+		? basePage
+		: { ...basePage, image: new URL("/og-image.png", siteUrl).href };
+// The browser chrome takes the page color of each theme, read from the style's tokens.
+const pageColor = tokens.color.tokens.find((t) => t.name === "page")!.value as { light: string; dark: string };
 const isCurrent = (url: string) => url === Astro.url.pathname;
 const launcher = user ? (Astro.props.launcher ?? (await launcherFor(user))) : null;
 
-// The prompt names this app by its host (social.bridgewater.digital -> "social").
-const appName = (() => {
+// The prompt names this app by its host (social.bridgewater.digital -> "social"); the footer shows the host.
+const host = (() => {
 	try {
-		return new URL(process.env.EMDASH_SITE_URL ?? "").hostname.split(".")[0] || "social";
+		return new URL(siteUrl).hostname;
 	} catch {
-		return "social";
+		return "social.bridgewater.digital";
 	}
 })();
+const appName = host.split(".")[0] || "social";
 const firstName = user?.name.split(" ")[0] || user?.username;
 const hasApps = !!launcher && (launcher.favorites.length > 0 || launcher.sections.length > 0);
 const accountLinks = user
@@ -83,8 +86,8 @@ const accountLinks = user
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-		<meta name="theme-color" content="#fafcfc" media="(prefers-color-scheme: light)" />
-		<meta name="theme-color" content="#0a1b1e" media="(prefers-color-scheme: dark)" />
+		<meta name="theme-color" content={pageColor.light} media="(prefers-color-scheme: light)" />
+		<meta name="theme-color" content={pageColor.dark} media="(prefers-color-scheme: dark)" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		{/* Before paint: the saved theme, else the system's (same key as the bundle's ThemeToggle). */}
 		<script is:inline>
@@ -104,7 +107,7 @@ const accountLinks = user
 		<title>{pageTitle}</title>
 		<EmDashHead page={page} />
 	</head>
-	<body class:list={{ "has-tabs": tabs.length > 0, wide }} data-tab={tabs.length ? activeTab ?? tabs[0].id : undefined}>
+	<body class:list={["bw-page", { "has-tabs": tabs.length > 0 }]} data-tab={tabs.length ? activeTab ?? tabs[0].id : undefined}>
 		<EmDashBodyStart page={page} />
 		<header class="bw-header">
 			<div class="bw-strip" aria-hidden="true"></div>
@@ -248,18 +251,21 @@ const accountLinks = user
 		</header>
 		{launcher && <AppLauncher launcher={launcher} />}
 
-		<main class="frame main">
+		<main class="bw-main bw-container">
 			<slot />
 		</main>
 
 		{skyline && (
-			<div class="frame skyline">
+			<div class="bw-page__skyline bw-container">
 				<Skyline />
 			</div>
 		)}
 
-		<footer class="frame footer">
-			<p>{tagline}</p>
+		<footer class="bw-footer">
+			<div class="bw-container">
+				<span>{host}</span>
+				<a href="https://bridgewater.digital">bridgewater.digital</a>
+			</div>
 		</footer>
 
 		{
@@ -330,25 +336,8 @@ const accountLinks = user
 </html>
 
 <style>
-	.wide {
-		--max: var(--page-max);
-	}
-	.main {
-		padding-top: var(--space-5);
-		padding-bottom: var(--space-6);
-	}
-	.skyline {
-		margin-top: var(--space-6);
-	}
-	.footer {
-		color: var(--comment);
-		font-size: 14px;
-		line-height: 22px;
-		padding-top: var(--space-4);
-		padding-bottom: var(--space-6);
-	}
-	.has-tabs .footer {
-		padding-bottom: calc(var(--nav-h) + var(--space-6) + env(safe-area-inset-bottom));
+	.has-tabs .bw-footer {
+		padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
 	}
 	.tabbar {
 		position: fixed;
@@ -367,7 +356,7 @@ const accountLinks = user
 		place-content: center;
 		justify-items: center;
 		gap: 2px;
-		font: 500 12.5px/18px var(--font-sans);
+		font: var(--type-mono-small);
 		color: var(--comment);
 		text-decoration: none;
 	}
@@ -379,8 +368,8 @@ const accountLinks = user
 		.tabbar {
 			display: none;
 		}
-		.has-tabs .footer {
-			padding-bottom: var(--space-6);
+		.has-tabs .bw-footer {
+			padding-bottom: 0;
 		}
 	}
 </style>

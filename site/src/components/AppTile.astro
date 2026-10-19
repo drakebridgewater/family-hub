@@ -8,105 +8,15 @@ interface Props {
 const { svc } = Astro.props;
 ---
 
-<a class="tile" href={svc.url} rel="noopener" title={svc.description}>
-	<span class="tile__icon"><AppIcon name={svc.name} icon={svc.icon} size={48} /></span>
-	<span class="tile__name">{svc.name}</span>
-	{svc.description && <span class="tile__desc">{svc.description}</span>}
+<a class="app" href={svc.url} rel="noopener" title={svc.description}>
+	<AppIcon name={svc.name} icon={svc.icon} />
+	<span class="bw-apps__name app__name">{svc.name}</span>
+	{svc.description && <span class="bw-apps__desc app__desc">{svc.description}</span>}
 </a>
 
 <style>
-	/* Laid out by the .apps container in ServiceGrid (data-view + its width). */
-	.tile {
-		display: grid;
-		justify-items: center;
-		gap: var(--space-2);
-		text-align: center;
-		color: var(--ink);
-		text-decoration: none;
-		padding: var(--space-1) 0;
-		border-radius: var(--radius-sm);
+	/* A row of the brand's app grid (ul.bw-apps in ServiceGrid, which also draws the compact icon view). */
+	.app {
 		-webkit-tap-highlight-color: transparent;
-	}
-	.tile:hover .tile__name {
-		color: var(--teal);
-		text-decoration: underline;
-		text-decoration-thickness: var(--hairline);
-		text-underline-offset: 3px;
-	}
-	.tile__name {
-		max-width: 100%;
-		font-size: 13px;
-		font-weight: 500;
-		line-height: 18px;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-	.tile__desc {
-		display: none;
-	}
-
-	/* Detailed: a row with the description, separated by hairlines (ServiceGrid draws them). */
-	:global(.apps[data-view="detailed"]) .tile {
-		grid-template-columns: 40px 1fr;
-		grid-template-rows: auto auto;
-		justify-items: start;
-		align-items: center;
-		column-gap: var(--space-3);
-		row-gap: 0;
-		text-align: left;
-		padding: var(--space-3) 0;
-	}
-	:global(.apps[data-view="detailed"]) .tile__icon {
-		grid-row: span 2;
-	}
-	:global(.apps[data-view="detailed"]) .tile__icon :global(.app-icon) {
-		width: 40px;
-		height: 40px;
-	}
-	:global(.apps[data-view="detailed"]) .tile__name {
-		font-size: 16px;
-		line-height: 24px;
-		align-self: end;
-		white-space: normal;
-	}
-	:global(.apps[data-view="detailed"]) .tile__desc {
-		display: block;
-		font-size: 14px;
-		line-height: 20px;
-		color: var(--comment);
-		align-self: start;
-	}
-	@container apps (min-width: 520px) and (max-width: 899px) {
-		:global(.apps[data-view="auto"]) .tile {
-			grid-template-columns: 40px 1fr;
-			grid-template-rows: auto auto;
-			justify-items: start;
-			align-items: center;
-			column-gap: var(--space-3);
-			row-gap: 0;
-			text-align: left;
-			padding: var(--space-3) 0;
-		}
-		:global(.apps[data-view="auto"]) .tile__icon {
-			grid-row: span 2;
-		}
-		:global(.apps[data-view="auto"]) .tile__icon :global(.app-icon) {
-			width: 40px;
-			height: 40px;
-		}
-		:global(.apps[data-view="auto"]) .tile__name {
-			font-size: 16px;
-			line-height: 24px;
-			align-self: end;
-			white-space: normal;
-		}
-		:global(.apps[data-view="auto"]) .tile__desc {
-			display: block;
-			font-size: 14px;
-			line-height: 20px;
-			color: var(--comment);
-			align-self: start;
-		}
 	}
 </style>

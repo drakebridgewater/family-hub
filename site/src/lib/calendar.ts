@@ -10,35 +10,33 @@ import ical, { type VEvent } from "node-ical";
 export interface ScheduleItem {
 	title: string;
 	calendar: string;
-	color: string;
 	start: Date;
 	end: Date;
 	allDay: boolean;
 	location?: string;
 }
 
-const PALETTE = ["#e76f51", "#2a9d8f", "#7b61ff", "#e9a23b", "#3a86ff", "#d6336c"];
 // How far ahead feeds are fetched; each user picks how much of it to show.
 const DAYS_AHEAD = Number(process.env.CALENDAR_DAYS_AHEAD ?? 31);
 const CACHE_MS = Number(process.env.CALENDAR_CACHE_MINUTES ?? 10) * 60_000;
 
 let cache: { at: number; items: ScheduleItem[] } | null = null;
 
-function feeds(): Array<{ name: string; url: string; color: string }> {
+function feeds(): Array<{ name: string; url: string }> {
 	return (process.env.CALENDAR_FEEDS ?? "")
 		.split(",")
 		.map((s) => s.trim())
 		.filter(Boolean)
-		.map((entry, i) => {
+		.map((entry) => {
 			const [name, url] = entry.includes("|") ? entry.split("|", 2) : ["Family", entry];
-			return { name: name.trim(), url: url.trim().replace(/^webcal:/, "https:"), color: PALETTE[i % PALETTE.length] };
+			return { name: name.trim(), url: url.trim().replace(/^webcal:/, "https:") };
 		});
 }
 
 const text = (v: unknown) =>
 	typeof v === "string" ? v : v && typeof v === "object" && "val" in v ? String((v as any).val) : "";
 
-async function loadFeed(feed: { name: string; url: string; color: string }, from: Date, to: Date) {
+async function loadFeed(feed: { name: string; url: string }, from: Date, to: Date) {
 	const data = await ical.async.fromURL(feed.url);
 	const items: ScheduleItem[] = [];
 	for (const component of Object.values(data)) {
@@ -50,7 +48,6 @@ async function loadFeed(feed: { name: string; url: string; color: string }, from
 			items.push({
 				title: text(inst.summary) || "Busy",
 				calendar: feed.name,
-				color: feed.color,
 				start: inst.start,
 				end: inst.end,
 				allDay: inst.isFullDay,

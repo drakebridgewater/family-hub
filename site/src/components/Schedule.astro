@@ -26,7 +26,7 @@ const grouped = groupByDay(items, days);
 								<span class="event__body">
 									<span class="event__title">{ev.title}</span>
 									<span class="event__meta">
-										<span class="event__cal" style={`--cal:${ev.color}`}>{ev.calendar}</span>
+										<span class="event__cal">{ev.calendar.toLowerCase()}</span>
 										{ev.location && ` · ${ev.location}`}
 									</span>
 								</span>
@@ -62,13 +62,12 @@ const grouped = groupByDay(items, days);
 	}
 	.event {
 		display: grid;
-		grid-template-columns: 76px 1fr;
+		grid-template-columns: 68px 1fr;
 		gap: var(--space-3);
 		align-items: baseline;
 	}
 	.event__time {
-		font-size: 12.5px;
-		line-height: 18px;
+		font: var(--type-mono-small);
 		color: var(--comment);
 	}
 	.event__body {
@@ -76,24 +75,16 @@ const grouped = groupByDay(items, days);
 		min-width: 0;
 	}
 	.event__title {
-		font-weight: 500;
+		font: var(--type-body-strong);
 		overflow-wrap: anywhere;
 	}
 	.event__meta {
-		font-size: 14px;
-		line-height: 20px;
+		font: var(--type-small);
 		color: var(--comment);
 		overflow-wrap: anywhere;
 	}
-	/* The calendar's own color as a dot; its name says which calendar. */
-	.event__cal::before {
-		content: "";
-		display: inline-block;
-		width: var(--space-2);
-		height: var(--space-2);
-		margin-right: var(--space-1);
-		border-radius: 50%;
-		background: var(--cal);
-		vertical-align: 1px;
+	/* Which calendar, as a machine fact: its name in mono. Color stays for roles. */
+	.event__cal {
+		font: var(--type-mono-small);
 	}
 </style>

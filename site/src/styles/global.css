@@ -1,14 +1,14 @@
 /*
- * The bridgewater.digital style (tokens + components) comes first; this file
- * only adds the hub's own layout. Colors, type, radii and spacing are tokens
- * from bridgewater/tokens.css; refresh those with scripts/sync-style.mjs.
+ * The bridgewater.digital style (tokens, components, layouts and its self-hosted
+ * fonts) comes first; this file only adds what the hub needs on top. Every color,
+ * size and font is a token from bridgewater/bridgewater.css; refresh that with
+ * scripts/sync-style.mjs, never edit it here.
  */
-@import "./bridgewater/tokens.css";
-@import "./bridgewater/bundle.css";
+@import "./bridgewater/bridgewater.css";
 
 :root {
-	/* Reading column on inner pages; it shares the header's left edge. The home page uses the full width. */
-	--max: 720px;
+	/* Reading column for posts and pages, inside the page frame. */
+	--reading: 720px;
 	--nav-h: 60px;
 }
 
@@ -26,49 +26,13 @@ img {
 	display: block;
 }
 
-/* Same box as the header's bw-container, so every left edge lines up. */
-.frame {
-	width: 100%;
-	max-width: var(--page-max);
-	margin-inline: auto;
-	padding-inline: var(--space-4);
-}
-.frame > * {
-	max-width: var(--max);
-}
-@media (min-width: 720px) {
-	.frame {
-		padding-inline: var(--space-6);
-	}
-}
-
-.section {
-	margin-top: var(--space-6);
-}
-
-.section__head {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	flex-wrap: wrap;
-	gap: var(--space-3);
-	margin-bottom: var(--space-4);
-}
-
-.section__title {
-	font-size: 24px;
-	line-height: 30px;
-}
-
-.section__meta {
-	color: var(--comment);
-	font-size: 14px;
-	line-height: 22px;
+.reading {
+	max-width: var(--reading);
 }
 
 /* Small headings inside a section (app groups, days). Sentence case, never uppercase. */
 .label {
-	font: 500 14px/22px var(--font-sans);
+	font: var(--type-label);
 	color: var(--comment);
 }
 
@@ -88,7 +52,8 @@ img {
 }
 
 kbd {
-	font: 500 12.5px/18px var(--font-mono);
+	font: var(--type-mono-small);
+	font-weight: 500;
 	padding: 0 var(--space-1);
 	border: var(--hairline) solid var(--line-strong);
 	border-radius: var(--radius-sm);
@@ -104,26 +69,22 @@ kbd {
 	white-space: nowrap;
 }
 
-/* Article layout shared by posts and pages. */
+/* A section link on the right of a section head ("Edit", "Next 7 days"). */
+.section-link {
+	white-space: nowrap;
+	font: var(--type-small);
+}
+
+/* Posts and pages: the page head, then the image and the prose. */
 .article__media img {
 	width: 100%;
 	border-radius: var(--radius-md);
 }
-.article__body {
-	padding-top: var(--space-5);
-}
-.article__meta {
-	color: var(--comment);
-	font-size: 14px;
-	line-height: 22px;
-}
-.article__title {
-	margin: var(--space-2) 0 var(--space-5);
+.article__media + .prose {
+	margin-top: var(--space-5);
 }
 .prose {
 	max-width: var(--measure);
-	font-size: 17px;
-	line-height: 28px;
 }
 .prose > * + * {
 	margin-top: var(--space-4);
@@ -142,8 +103,7 @@ kbd {
 	list-style: none;
 }
 .term {
-	font-size: 14px;
-	line-height: 22px;
+	font: var(--type-small);
 	text-decoration: none;
 }
 .term:hover {

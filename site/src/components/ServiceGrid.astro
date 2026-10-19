@@ -29,7 +29,7 @@ const total = sections.reduce((n, s) => n + s.services.length, 0);
 			{favorites.length > 0 && (
 				<div class="group group--fav">
 					<h3 class="label group__title">Favorites</h3>
-					<ul class="grid" role="list">
+					<ul class="bw-apps grid" role="list">
 						{favorites.map((svc) => (
 							<li>
 								<AppTile svc={svc} />
@@ -47,7 +47,7 @@ const total = sections.reduce((n, s) => n + s.services.length, 0);
 					{sections.map((section) => (
 						<div class="group">
 							{section.title && <h3 class="label group__title">{section.title}</h3>}
-							<ul class="grid" role="list">
+							<ul class="bw-apps grid" role="list">
 								{section.services.map((svc) => (
 									<li>
 										<AppTile svc={svc} />
@@ -81,7 +81,12 @@ const total = sections.reduce((n, s) => n + s.services.length, 0);
 </script>
 
 <style>
-	/* Sized by the space it gets (sidebar, phone panel, full desktop width), not the viewport. */
+	/*
+	 * The brand's app grid (ul.bw-apps): hairline rows with tile, name and description.
+	 * That is the detailed view. Compact (and automatic, when the space is narrow or the
+	 * full desktop width) turns it into a home-screen icon grid. Sized by the space it
+	 * gets (sidebar, phone panel, full desktop width), not the viewport.
+	 */
 	.apps {
 		container: apps / inline-size;
 	}
@@ -90,16 +95,7 @@ const total = sections.reduce((n, s) => n + s.services.length, 0);
 		margin-top: var(--space-5);
 	}
 	.group__title {
-		margin-bottom: var(--space-3);
-	}
-	/* Icon grid, phone-home-screen style (compact, and auto when narrow). */
-	.grid {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
-		gap: var(--space-4) var(--space-2);
+		margin-bottom: var(--space-2);
 	}
 	.all:not([data-foldable]) > .all__toggle {
 		display: none;
@@ -112,7 +108,7 @@ const total = sections.reduce((n, s) => n + s.services.length, 0);
 	}
 	.all__toggle::after {
 		content: "+";
-		font-family: var(--font-mono);
+		font: var(--type-mono);
 		color: var(--comment);
 	}
 	.all[open] > .all__toggle::after {
@@ -122,29 +118,98 @@ const total = sections.reduce((n, s) => n + s.services.length, 0);
 		margin-top: var(--space-5);
 	}
 
-	/* Detailed: rows separated by hairlines, as many columns as fit. */
-	.apps[data-view="detailed"] .grid {
-		grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-		gap: 0 var(--space-6);
+	/* Compact: icons only. */
+	.apps[data-view="compact"] .grid {
+		grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+		gap: var(--space-4) var(--space-2);
 	}
-	.apps[data-view="detailed"] .grid > li {
-		border-bottom: var(--hairline) solid var(--line);
+	.apps[data-view="compact"] .grid > li {
+		border-top: 0;
 	}
-	@container apps (min-width: 520px) and (max-width: 899px) {
+	.apps[data-view="compact"] .grid :global(.app) {
+		grid-template-columns: none;
+		justify-items: center;
+		gap: var(--space-2);
+		text-align: center;
+		padding: var(--space-1) 0;
+	}
+	.apps[data-view="compact"] .grid :global(.app-icon) {
+		--app-icon: 48px;
+		grid-row: auto;
+	}
+	.apps[data-view="compact"] .grid :global(.bw-apps__name) {
+		max-width: 100%;
+		font: var(--type-label);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.apps[data-view="compact"] .grid :global(.bw-apps__desc) {
+		display: none;
+	}
+	@container apps (max-width: 519px) {
 		.apps[data-view="auto"] .grid {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: 0 var(--space-6);
+			grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+			gap: var(--space-4) var(--space-2);
 		}
 		.apps[data-view="auto"] .grid > li {
-			border-bottom: var(--hairline) solid var(--line);
+			border-top: 0;
+		}
+		.apps[data-view="auto"] .grid :global(.app) {
+			grid-template-columns: none;
+			justify-items: center;
+			gap: var(--space-2);
+			text-align: center;
+			padding: var(--space-1) 0;
+		}
+		.apps[data-view="auto"] .grid :global(.app-icon) {
+			--app-icon: 48px;
+			grid-row: auto;
+		}
+		.apps[data-view="auto"] .grid :global(.bw-apps__name) {
+			max-width: 100%;
+			font: var(--type-label);
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+		.apps[data-view="auto"] .grid :global(.bw-apps__desc) {
+			display: none;
 		}
 	}
-
 	/*
 	 * Full desktop width (the strip above the feed): icon sections sit side by
 	 * side and wrap, so a few apps take one short row and many stay compact.
 	 */
 	@container apps (min-width: 900px) {
+		.apps[data-view="auto"] .grid {
+			grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+			gap: var(--space-4) var(--space-2);
+		}
+		.apps[data-view="auto"] .grid > li {
+			border-top: 0;
+		}
+		.apps[data-view="auto"] .grid :global(.app) {
+			grid-template-columns: none;
+			justify-items: center;
+			gap: var(--space-2);
+			text-align: center;
+			padding: var(--space-1) 0;
+		}
+		.apps[data-view="auto"] .grid :global(.app-icon) {
+			--app-icon: 48px;
+			grid-row: auto;
+		}
+		.apps[data-view="auto"] .grid :global(.bw-apps__name) {
+			max-width: 100%;
+			font: var(--type-label);
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+		.apps[data-view="auto"] .grid :global(.bw-apps__desc) {
+			display: none;
+		}
 		.apps:not([data-view="detailed"]) .groups {
 			display: flex;
 			flex-wrap: wrap;
@@ -153,12 +218,14 @@ const total = sections.reduce((n, s) => n + s.services.length, 0);
 		.apps:not([data-view="detailed"]) .group + .group {
 			margin-top: 0;
 		}
-		.apps:not([data-view="detailed"]) .grid {
+		.apps[data-view="auto"] .grid,
+		.apps[data-view="compact"] .grid {
 			display: flex;
 			flex-wrap: wrap;
 			gap: var(--space-3) var(--space-1);
 		}
-		.apps:not([data-view="detailed"]) .grid > li {
+		.apps[data-view="auto"] .grid > li,
+		.apps[data-view="compact"] .grid > li {
 			width: 84px;
 		}
 	}

@@ -24,19 +24,21 @@ const page = createPublicPageContext({
 ---
 
 <Base title={data.title} user={user} page={page} path={[slug]}>
-	<article class="article">
+	<article class="article reading">
+		<div class="bw-pagehead">
+			<div class="bw-pagehead__text">
+				<h1 {...entry.edit.title}>{data.title}</h1>
+			</div>
+		</div>
 		{
 			data.featured_image && (
 				<div class="article__media" {...entry.edit.featured_image}>
-					<Image image={data.featured_image} sizes="(min-width: 720px) 656px, 100vw" priority />
+					<Image image={data.featured_image} sizes="(min-width: 720px) 720px, 100vw" priority />
 				</div>
 			)
 		}
-		<div class="article__body">
-			<h1 class="article__title" {...entry.edit.title}>{data.title}</h1>
-			<div class="prose">
-				<PortableText value={data.content} />
-			</div>
+		<div class="prose">
+			<PortableText value={data.content} />
 		</div>
 	</article>
 </Base>

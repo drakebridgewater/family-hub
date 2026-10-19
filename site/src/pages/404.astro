@@ -4,17 +4,11 @@ Astro.response.status = 404;
 ---
 
 <Base title="Not found" path={["not-found"]}>
-	<section class="missing">
+	<section class="bw-focus">
 		<h1>Page not found</h1>
-		<p class="bw-soft">It may have been moved or unpublished.</p>
-		<a href="/" class="bw-btn bw-btn--primary">Back home</a>
+		<p class="bw-focus__lede">It may have been moved or unpublished.</p>
+		<div class="bw-focus__actions">
+			<a href="/" class="bw-btn bw-btn--primary">Back home</a>
+		</div>
 	</section>
 </Base>
-
-<style>
-	.missing {
-		display: grid;
-		gap: var(--space-3);
-		justify-items: start;
-	}
-</style>

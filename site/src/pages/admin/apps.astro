@@ -150,6 +150,7 @@ const knownGroups = [
 		...user.groups,
 	]),
 ].sort();
+const appCount = sections.reduce((n, s) => n + s.services.length, 0);
 // A word with each state, never a bare color. Shown (optional) needs no label.
 const policyStatus = {
 	always: { state: "ok", label: "always shown" },
@@ -159,8 +160,15 @@ const policyStatus = {
 ---
 
 <Base title="Manage apps" user={user} path={["admin", "apps"]}>
-	<h1>Manage apps</h1>
-	<p class="sub bw-soft">The app list everyone sees. Changes apply right away.</p>
+	<div class="bw-pagehead">
+		<div class="bw-pagehead__text">
+			<h1>Manage apps</h1>
+			<p class="bw-pagehead__meta">
+				<span class="bw-mono">{appCount} apps</span> in <span class="bw-mono">{sections.length} sections</span> · the list everyone
+				sees; changes apply right away
+			</p>
+		</div>
+	</div>
 
 	{error && <p class="bw-panel flash" data-role="red" role="alert">{error}</p>}
 	{saved && !error && <p class="bw-panel flash" data-role="green" role="status">Saved.</p>}
@@ -286,9 +294,6 @@ const policyStatus = {
 </script>
 
 <style>
-	.sub {
-		margin-top: var(--space-2);
-	}
 	.flash {
 		margin-top: var(--space-5);
 		padding: var(--space-3) var(--space-4);
@@ -296,8 +301,7 @@ const policyStatus = {
 	.note {
 		margin-top: var(--space-5);
 		color: var(--comment);
-		font-size: 14px;
-		line-height: 22px;
+		font: var(--type-small);
 		max-width: var(--measure);
 	}
 	.sections {
@@ -333,7 +337,7 @@ const policyStatus = {
 		border-radius: var(--radius-sm);
 		background: transparent;
 		color: var(--ink);
-		font: 600 24px/30px var(--font-sans);
+		font: var(--type-h2);
 	}
 	.sec__rename input:hover,
 	.sec__rename input:focus {
@@ -370,7 +374,7 @@ const policyStatus = {
 		min-width: 0;
 	}
 	.app__name {
-		font-weight: 500;
+		font: var(--type-body-strong);
 	}
 	/* Hidden from everyone: grey, never faded. */
 	.app[data-policy="hidden"] .app__name {
@@ -378,8 +382,7 @@ const policyStatus = {
 	}
 	.app__url {
 		color: var(--comment);
-		font-size: 12.5px;
-		line-height: 18px;
+		font: var(--type-mono-small);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -393,8 +396,7 @@ const policyStatus = {
 	}
 	.app__groups {
 		color: var(--comment);
-		font-size: 12.5px;
-		line-height: 18px;
+		font: var(--type-mono-small);
 	}
 	.edit > summary,
 	.add > summary {
@@ -403,7 +405,7 @@ const policyStatus = {
 		min-height: 32px;
 		margin-left: calc(36px + var(--space-3));
 		color: var(--teal);
-		font-size: 14px;
+		font: var(--type-small);
 		cursor: pointer;
 		list-style: none;
 	}

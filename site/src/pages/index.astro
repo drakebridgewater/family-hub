@@ -1,5 +1,5 @@
 ---
-import { getEmDashCollection, getWidgetArea } from "emdash";
+import { getEmDashCollection, getSiteSettings, getWidgetArea } from "emdash";
 import { WidgetArea } from "emdash/ui";
 import { termsForPosts } from "../lib/terms";
 import Base from "../layouts/Base.astro";
@@ -20,13 +20,15 @@ const user = await getFamilyUser(Astro.request);
 const schedulePublic = (process.env.SCHEDULE_VISIBILITY ?? "members") === "public";
 const showSchedule = scheduleEnabled() && (schedulePublic || !!user);
 
-const [{ entries: recent }, sections, schedule, prefs] = await Promise.all([
+const [{ entries: recent }, sections, schedule, prefs, settings] = await Promise.all([
 	// Over-fetch for visitors so hiding family-only posts still fills a page.
 	getEmDashCollection("posts", { orderBy: { published_at: "desc" }, limit: user ? PAGE_SIZE : PAGE_SIZE * 3 }),
 	user ? servicesFor(user) : Promise.resolve([]),
 	showSchedule ? getSchedule() : Promise.resolve([]),
 	user ? getPrefs(user.username) : Promise.resolve(DEFAULT_PREFS),
+	getSiteSettings(),
 ]);
+const tagline = settings?.tagline || "";
 const posts = (user ? recent : recent.filter((post) => !isMembersOnly(post))).slice(0, PAGE_SIZE);
 const [postTerms, sidebarArea] = await Promise.all([termsForPosts(posts.map((p) => p.data.id)), getWidgetArea("sidebar")]);
 const hasWidgets = (sidebarArea?.widgets.length ?? 0) > 0;
@@ -36,6 +38,9 @@ const launcher = arrange(sections, prefs);
 const isAdmin = isAppAdmin(user);
 const showNewPost = !!user && canPost(user.groups);
 const scheduleLabel = prefs.days === 1 ? "Today" : `Next ${prefs.days} days`;
+// Numbered sections, as the brand's home layout has them: apps, feed, then the schedule.
+const num = (n: number) => String(n).padStart(2, "0");
+const feedNum = num(user ? 2 : 1);
 
 // The page differs per visitor, so never let a shared cache store it.
 Astro.response.headers.set("Cache-Control", user ? "private, no-store" : "public, max-age=0, must-revalidate");
@@ -65,45 +70,48 @@ const tabIds = tabs.map((t) => t.id);
 const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) && tabIds.includes(t)) ?? tabIds[0];
 ---
 
-<Base user={user} tabs={tabs} activeTab={activeTab} wide={split || !!user} launcher={user ? launcher : undefined} skyline>
+<Base user={user} tabs={tabs} activeTab={activeTab} launcher={user ? launcher : undefined} skyline>
 	{
 		user ? (
-			<section class="hello" aria-labelledby="hello-title">
-				<h1 id="hello-title">
+			<div class="bw-hero hello">
+				<h1 class="bw-display">
 					{greeting}, {firstName}
 				</h1>
-			</section>
+				{tagline && <p>{tagline}</p>}
+			</div>
 		) : (
-			<section class="bw-panel welcome" aria-labelledby="welcome-title">
-				<h1 id="welcome-title" class="welcome__title">Welcome, friends and family</h1>
-				<p class="welcome__sub bw-soft">
-					Catch up on what we've been up to below. Family members can sign in to see our schedule and the
+			<div class="bw-hero">
+				<h1 class="bw-display">Welcome, friends and family</h1>
+				<p>
+					Catch up on what we've been up to below. Family members can sign in to see the schedule and the
 					shared apps.
 				</p>
-				<a href="/login" class="bw-btn bw-btn--primary">Sign in with your family account</a>
-			</section>
+				<div class="hero__actions">
+					<a href="/login" class="bw-btn bw-btn--primary">Sign in</a>
+				</div>
+			</div>
 		)
 	}
 
 	{/* Apps span the full width on desktop, above the feed and schedule; a tab on phones. */}
 	{
 		user && (
-			<section id="apps" class="section panel panel--apps" aria-labelledby="apps-title">
-				<div class="section__head">
-					<h2 id="apps-title" class="section__title">Your apps</h2>
+			<section id="apps" class="bw-section panel panel--apps" aria-labelledby="apps-title">
+				<div class="bw-section__head">
+					<h2 id="apps-title"><span class="bw-secnum">01</span>Your apps</h2>
 					<span class="apps-tools">
 						<button type="button" class="bw-btn bw-btn--secondary bw-btn--sm findapp" data-launcher-open title="Find an app (press /)">
-							Find <kbd>/</kbd>
+							Find an app <kbd>/</kbd>
 						</button>
 						<span class="viewswitch" role="group" aria-label="App layout">
 							<button type="button" class="bw-btn bw-btn--sm" data-app-view="compact" aria-pressed={String(prefs.appView === "compact")} title="Compact: icons only">Icons</button>
 							<button type="button" class="bw-btn bw-btn--sm" data-app-view="detailed" aria-pressed={String(prefs.appView === "detailed")} title="Detailed: show descriptions">Details</button>
 						</span>
-						<a class="section__link" href="/settings#apps">
+						<a class="section-link" href="/settings#apps">
 							{launcher.hiddenCount ? `${launcher.hiddenCount} hidden · Edit` : "Edit"}
 						</a>
 						{isAdmin && (
-							<a class="section__link" href="/admin/apps">Manage</a>
+							<a class="section-link" href="/admin/apps">Manage</a>
 						)}
 					</span>
 				</div>
@@ -112,10 +120,10 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 		)
 	}
 
-	<div class:list={["home", { "home--split": split }]}>
-		<section id="feed" class="section panel panel--feed" aria-labelledby="feed-title">
-			<div class="section__head">
-				<h2 id="feed-title" class="section__title">Family feed</h2>
+	<div class:list={["home", { "bw-split": split }]}>
+		<section id="feed" class="bw-section panel panel--feed" aria-labelledby="feed-title">
+			<div class="bw-section__head">
+				<h2 id="feed-title"><span class="bw-secnum">{feedNum}</span>Family feed</h2>
 				{showNewPost && (
 					<a href={NEW_POST_URL} class="bw-btn bw-btn--primary bw-btn--sm">New post</a>
 				)}
@@ -143,10 +151,10 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 		<aside class="side" aria-label="Schedule and more">
 			{
 				user && showSchedule && (
-					<section id="schedule" class="section panel panel--schedule" aria-labelledby="schedule-title">
-						<div class="section__head">
-							<h2 id="schedule-title" class="section__title">Coming up</h2>
-							<a class="section__link" href="/settings#days">
+					<section id="schedule" class="bw-section panel panel--schedule" aria-labelledby="schedule-title">
+						<div class="bw-section__head">
+							<h2 id="schedule-title"><span class="bw-secnum">03</span>Coming up</h2>
+							<a class="section-link" href="/settings#days">
 								{scheduleLabel}
 							</a>
 						</div>
@@ -156,7 +164,7 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 			}
 			{/* EmDash widgets: create a widget area named "sidebar" in the admin. On phones they show under the feed. */}
 			{hasWidgets && (
-				<section class="section panel panel--feed widgets">
+				<section class="bw-section panel panel--feed widgets">
 					<WidgetArea name="sidebar" />
 				</section>
 			)}
@@ -185,13 +193,12 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 </script>
 
 <style>
-	.welcome {
-		display: grid;
-		gap: var(--space-3);
-		justify-items: start;
+	.hero__actions {
+		margin-top: var(--space-5);
 	}
-	.welcome__sub {
-		max-width: var(--measure);
+	/* The apps section comes before the feed and schedule, so space them as sections. */
+	.panel--apps + .home {
+		margin-top: var(--space-7);
 	}
 	.apps-tools {
 		display: inline-flex;
@@ -215,16 +222,12 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 		margin-left: calc(-1 * var(--field-border));
 		border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 	}
-	/* Selected is green: the green role, which is also this site's signature. */
+	/* Selected is the signature: green, which is also the "selected" role. */
 	.viewswitch .bw-btn[aria-pressed="true"] {
-		background: var(--green-tint);
-		border-color: var(--green);
+		background: var(--sig-tint);
+		border-color: var(--sig);
 		color: var(--ink);
 		position: relative;
-	}
-	.section__link {
-		white-space: nowrap;
-		font-size: 14px;
 	}
 	/* Phones: one panel at a time, picked by the tab bar (body[data-tab]). */
 	@media (max-width: 899px) {
@@ -239,16 +242,24 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 		:global(body[data-tab="feed"]) .hello {
 			display: block;
 		}
-		.panel--apps,
-		.home .section:first-child,
-		.side .section {
-			margin-top: var(--space-5);
+		.panel--apps + .home {
+			margin-top: 0;
+		}
+		.bw-split {
+			gap: 0;
+		}
+		.side .bw-section {
+			margin-top: var(--space-6);
+		}
+		:global(body[data-tab="schedule"]) .side .panel--schedule {
+			margin-top: 0;
 		}
 		/* No "/" key on a phone; the button still opens the search. */
-		.findapp kbd {
+		.findapp kbd,
+		.viewswitch {
 			display: none;
 		}
-		.section__title {
+		.bw-section__head h2 {
 			white-space: nowrap;
 		}
 	}
@@ -258,14 +269,7 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 			display: none;
 		}
 	}
-	/* Desktop: apps across the top, then the feed with the schedule beside it. */
 	@media (min-width: 900px) {
-		.home--split {
-			display: grid;
-			grid-template-columns: minmax(0, 1fr) 340px;
-			gap: var(--space-7);
-			align-items: start;
-		}
 		.side {
 			position: sticky;
 			top: var(--space-5);
@@ -286,9 +290,7 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 	}
 	.widgets :global(.widget__title) {
 		margin: 0 0 var(--space-2);
-		font-size: 18px;
-		line-height: 26px;
-		font-weight: 600;
+		font: var(--type-h3);
 	}
 	.widgets :global(ul) {
 		list-style: none;
@@ -301,12 +303,10 @@ const activeTab = [requested, prefs.startTab].find((t) => t && TABS.includes(t) 
 		justify-content: space-between;
 		gap: var(--space-2);
 		color: var(--comment);
-		font-family: var(--font-mono);
-		font-size: 12.5px;
+		font: var(--type-mono-small);
 	}
 	.widgets :global(a) {
-		font-family: var(--font-sans);
-		font-size: 16px;
+		font: var(--type-body);
 		text-decoration: none;
 		padding: var(--space-1) 0;
 	}

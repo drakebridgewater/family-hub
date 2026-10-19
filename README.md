@@ -76,16 +76,23 @@ forged header just gets the public view.
 The site uses the shared bridgewater.digital style ([style.bridgewater](https://github.com/drakebridgewater/style.bridgewater)),
 with **green** as its signature hue. The header follows that guide: signature strip, wordmark and theme toggle, an ink rule,
 then the prompt line `user@social:~/place`. The user name and `social` both lead back to the home page here, and the
-path is the breadcrumb.
+path is the breadcrumb. Pages use the guide's layouts: Home (display greeting, numbered sections, the app grid, the
+skyline), Settings for *Customize home*, Focus for sign-in prompts and Not found, and a page head on lists, posts and
+*Manage apps*. Every color, size and font is a token; nothing in `src/` sets a hex value or a raw font size.
 
-The tokens, component CSS, logo geometry and favicons are copied into `site/src/styles/bridgewater/` and `site/public/`
-and committed, so builds never fetch them. After changing the style repo:
+The style is vendored, not installed: `site/src/styles/bridgewater/` holds `bridgewater.css` (tokens and components),
+its self-hosted Fira fonts, `tokens.json` (the head reads `theme-color` from it) and the shape data the Astro components
+render, and `site/public/` holds the favicons, app icons, `og-image.png` and `site.webmanifest`. All of it is committed,
+so the Docker build never fetches anything: the style repo is private and the build image has no git or credentials,
+and a stylesheet loaded from another host would break the hub whenever that host is down. The PNG icons and og-image are
+rendered in green from the style's SVGs (it only ships teal PNGs). After a new style release:
 
 ```bash
-cd site && node scripts/sync-style.mjs ../../style.bridgewater   # or set STYLE_DIR
+cd ../style.bridgewater && git checkout v1.x.y   # the release to take
+cd ../family-hub/site && node scripts/sync-style.mjs ../../style.bridgewater   # or set STYLE_DIR; needs rsvg-convert
 ```
 
-Fira Sans and Fira Code are self-hosted through `@fontsource`.
+`src/styles/bridgewater/VERSION` records which release is in the build.
 
 ### The apps launcher in your other apps
 

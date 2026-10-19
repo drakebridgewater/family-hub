@@ -56,22 +56,39 @@ const viewChoices: Array<{ id: AppView; label: string }> = [
 	{ id: "detailed", label: "Detailed" },
 ];
 const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
+const sectionLinks = [
+	{ id: "start", label: "Open to" },
+	...(showSchedule ? [{ id: "days", label: "Calendar" }] : []),
+	{ id: "apps", label: "Apps" },
+];
 ---
 
 <Base title="Customize" user={user} path={["settings"]}>
-	<h1>Customize your home</h1>
-	<p class="sub bw-soft">These settings are just for you, {user.name.split(" ")[0]}, and follow you to any device.</p>
+	<div class="bw-pagehead">
+		<div class="bw-pagehead__text">
+			<h1>Customize your home</h1>
+			<p class="bw-pagehead__meta">Just for you, {user.name.split(" ")[0]}. These settings follow you to any device.</p>
+		</div>
+	</div>
 
-	<form method="post" class="form">
+	<div class="bw-settings">
+	<nav class="bw-subnav" aria-label="Settings sections">
+		<ul>
+			{sectionLinks.map((l, i) => (
+				<li><a href={`#${l.id}`} aria-current={i === 0 ? "page" : undefined}>{l.label}</a></li>
+			))}
+		</ul>
+	</nav>
+	<form method="post" class="bw-form form">
 		<fieldset class="group" id="start">
 			<legend>Open to</legend>
 			<p class="hint bw-field__hint">Which tab you land on when you open the hub on your phone.</p>
-			<div class="chips">
+			<div class="choices">
 				{
 					tabChoices.map((t) => (
-						<label class="chip">
+						<label class="bw-field bw-field--check">
 							<input type="radio" name="startTab" value={t.id} checked={prefs.startTab === t.id} />
-							<span>{t.label}</span>
+							<span class="bw-field__label">{t.label}</span>
 						</label>
 					))
 				}
@@ -83,12 +100,12 @@ const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 				<fieldset class="group" id="days">
 					<legend>Calendar</legend>
 					<p class="hint bw-field__hint">How far ahead "Coming up" shows.</p>
-					<div class="chips">
+					<div class="choices">
 						{dayChoices.map((d) => (
-							<label class="chip">
-								<input type="radio" name="days" value={d} checked={prefs.days === d} />
-								<span>{dayLabel(d)}</span>
-							</label>
+							<label class="bw-field bw-field--check">
+							<input type="radio" name="days" value={d} checked={prefs.days === d} />
+							<span class="bw-field__label">{dayLabel(d)}</span>
+						</label>
 						))}
 					</div>
 				</fieldset>
@@ -101,12 +118,12 @@ const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 			<p class="hint bw-field__hint">
 				Layout: Compact shows icons only, Detailed adds each app's description, Automatic picks by screen space.
 			</p>
-			<div class="chips chips--spaced">
+			<div class="choices choices--spaced">
 				{
 					viewChoices.map((v) => (
-						<label class="chip">
+						<label class="bw-field bw-field--check">
 							<input type="radio" name="appView" value={v.id} checked={prefs.appView === v.id} />
-							<span>{v.label}</span>
+							<span class="bw-field__label">{v.label}</span>
 						</label>
 					))
 				}
@@ -153,75 +170,54 @@ const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 			}
 		</fieldset>
 
-		<div class="actions">
-			<button type="submit" class="bw-btn bw-btn--primary">Save</button>
+		<div class="bw-form__actions actions">
 			<a href="/" class="bw-btn bw-btn--secondary">Cancel</a>
+			<button type="submit" class="bw-btn bw-btn--primary">Save</button>
 		</div>
 	</form>
+	</div>
 </Base>
 
+<script>
+	// The section nav marks the section you jumped to.
+	const links = document.querySelectorAll<HTMLAnchorElement>(".bw-subnav a");
+	const mark = (hash: string) => {
+		for (const a of links) a.toggleAttribute("aria-current", a.hash === hash);
+		for (const a of links) if (a.hash === hash) a.setAttribute("aria-current", "page");
+	};
+	if (location.hash && [...links].some((a) => a.hash === location.hash)) mark(location.hash);
+	for (const a of links) a.addEventListener("click", () => mark(a.hash));
+</script>
+
 <style>
-	.sub {
-		margin-top: var(--space-2);
-	}
+	/* The Settings layout's form, with room for the app list. */
 	.form {
-		margin-top: var(--space-5);
-		border-top: var(--hairline) solid var(--line);
+		max-width: none;
+		width: min(100%, 640px);
 	}
 	/* Each setting is a block separated by a hairline, not a card. */
 	.group {
 		margin: 0;
-		padding: var(--space-5) 0;
+		padding: 0 0 var(--space-6);
 		border: 0;
-		border-bottom: var(--hairline) solid var(--line);
 		min-width: 0;
 	}
 	legend {
 		float: left;
 		width: 100%;
 		padding: 0;
-		font-size: 18px;
-		line-height: 26px;
-		font-weight: 600;
+		font: var(--type-h3);
 	}
 	.hint {
 		clear: both;
 		margin: var(--space-1) 0 var(--space-3);
 	}
-	.chips {
-		display: flex;
-		flex-wrap: wrap;
+	.choices {
+		display: grid;
 		gap: var(--space-2);
 	}
-	.chips--spaced {
+	.choices--spaced {
 		margin-bottom: var(--space-5);
-	}
-	.chip input {
-		position: absolute;
-		opacity: 0;
-		pointer-events: none;
-	}
-	.chip span {
-		display: inline-flex;
-		align-items: center;
-		min-height: var(--control);
-		padding: 0 var(--space-4);
-		border: var(--field-border) solid var(--line-strong);
-		border-radius: var(--radius-sm);
-		font: 500 14px/20px var(--font-sans);
-		cursor: pointer;
-	}
-	.chip span:hover {
-		background: var(--panel);
-	}
-	/* Selected is green (the green role, which is also this site's signature). */
-	.chip input:checked + span {
-		background: var(--green-tint);
-		border-color: var(--green);
-	}
-	.chip input:focus-visible + span {
-		outline: var(--focus-width) solid var(--sig);
-		outline-offset: 2px;
 	}
 	.apps-section + .apps-section {
 		margin-top: var(--space-5);
@@ -247,13 +243,13 @@ const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 		padding: var(--space-2) 0;
 	}
 	.app__name {
-		font-weight: 500;
+		font: var(--type-label);
 		min-width: 0;
 		overflow-wrap: anywhere;
 	}
 	.app__note {
 		display: block;
-		font: 400 12.5px/18px var(--font-mono);
+		font: var(--type-mono-small);
 		color: var(--comment);
 	}
 	.star {
@@ -263,7 +259,7 @@ const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 		width: var(--control);
 		height: var(--control);
 		border-radius: var(--radius-sm);
-		font-size: 20px;
+		font: var(--type-h3);
 		color: var(--line-strong);
 		cursor: pointer;
 	}
@@ -285,7 +281,7 @@ const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 		display: inline-flex;
 		align-items: center;
 		gap: var(--space-2);
-		font-size: 14px;
+		font: var(--type-small);
 		cursor: pointer;
 	}
 	.show input {
@@ -299,13 +295,12 @@ const dayLabel = (d: number) => (d === 1 ? "Today" : `${d} days`);
 		color: var(--comment);
 		cursor: not-allowed;
 	}
+	/* The form's actions stay in reach while the app list scrolls. */
 	.actions {
-		display: flex;
-		gap: var(--space-3);
 		position: sticky;
 		bottom: 0;
-		padding: var(--space-3) 0 calc(var(--space-3) + env(safe-area-inset-bottom));
+		margin-top: 0;
+		padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
 		background: var(--page);
-		border-top: var(--hairline) solid var(--line);
 	}
 </style>

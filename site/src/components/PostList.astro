@@ -13,15 +13,17 @@ const { posts, heading, eyebrow } = Astro.props;
 const terms = await termsForPosts(posts.map((p) => p.data.id));
 ---
 
-<header class="list-head">
-	<p class="label">{eyebrow}</p>
-	<h1>{heading}</h1>
-</header>
+<div class="bw-pagehead">
+	<div class="bw-pagehead__text">
+		<h1>{heading}</h1>
+		<p class="bw-pagehead__meta">{eyebrow} · <span class="bw-mono">{posts.length} {posts.length === 1 ? "post" : "posts"}</span></p>
+	</div>
+</div>
 {
 	posts.length === 0 ? (
 		<p class="empty">No posts here yet.</p>
 	) : (
-		<div class="list">
+		<div class="list reading">
 			{posts.map((post, i) => (
 				<PostCard post={post} priority={i === 0} terms={terms.get(post.data.id)} />
 			))}
@@ -30,9 +32,6 @@ const terms = await termsForPosts(posts.map((p) => p.data.id));
 }
 
 <style>
-	.list-head {
-		margin-bottom: var(--space-5);
-	}
 	.list {
 		border-top: var(--hairline) solid var(--line);
 	}

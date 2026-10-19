@@ -50,38 +50,42 @@ const page = locked
 {
 	locked ? (
 		<Base title="Family only" user={user} page={page} path={["posts", "family-only"]}>
-			<section class="bw-panel locked" data-role="teal">
+			<section class="bw-focus locked">
 				<Icon name="lock" size={24} />
-				<h1 class="locked__title">This post is for family</h1>
-				<p class="bw-soft">Sign in with your family account to read it.</p>
-				<a href={loginHref} class="bw-btn bw-btn--primary">Sign in</a>
+				<h1>This post is for family</h1>
+				<p class="bw-focus__lede">Sign in with your family account to read it.</p>
+				<div class="bw-focus__actions">
+					<a href={loginHref} class="bw-btn bw-btn--primary">Sign in</a>
+				</div>
 			</section>
 		</Base>
 	) : (
 		<Base title={post.data.title} description={post.data.excerpt} user={user} page={page} path={["posts", slug]}>
-			<article class="article">
+			<article class="article reading">
+				<div class="bw-pagehead">
+					<div class="bw-pagehead__text">
+						<h1 {...post.edit.title}>{post.data.title}</h1>
+						<p class="bw-pagehead__meta">{author} · <time class="bw-mono">{dateLabel}</time></p>
+					</div>
+				</div>
 				{
 					post.data.featured_image && (
 						<div class="article__media" {...post.edit.featured_image}>
-							<Image image={post.data.featured_image} sizes="(min-width: 720px) 656px, 100vw" priority />
+							<Image image={post.data.featured_image} sizes="(min-width: 720px) 720px, 100vw" priority />
 						</div>
 					)
 				}
-				<div class="article__body">
-					<p class="article__meta">{author} · <time class="bw-mono">{dateLabel}</time></p>
-					<h1 class="article__title" {...post.edit.title}>{post.data.title}</h1>
-					<div class="prose">
-						<PortableText value={post.data.content} />
-					</div>
-					<div class="article__terms">
-						<Terms terms={terms} />
-					</div>
+				<div class="prose">
+					<PortableText value={post.data.content} />
+				</div>
+				<div class="article__terms">
+					<Terms terms={terms} />
 				</div>
 			</article>
 
-			<section id="comments" class="section comments">
-				<div class="section__head">
-					<h2 class="section__title">Comments</h2>
+			<section id="comments" class="bw-section comments reading">
+				<div class="bw-section__head">
+					<h2>Comments</h2>
 				</div>
 				<Comments collection="posts" contentId={post.data.id} threaded />
 				<CommentForm collection="posts" contentId={post.data.id} />
@@ -91,17 +95,10 @@ const page = locked
 }
 
 <style>
-	.locked {
-		display: grid;
-		gap: var(--space-3);
-		justify-items: start;
+	/* The lock is the private role. */
+	.locked > :global(.bw-icon) {
 		color: var(--teal);
-	}
-	.locked__title {
-		color: var(--ink);
-	}
-	.locked p {
-		max-width: var(--measure);
+		margin-bottom: var(--space-3);
 	}
 	.article__terms {
 		margin-top: var(--space-5);
@@ -130,10 +127,10 @@ const page = locked
 	.comments :global(.ec-comment-form-field textarea) {
 		border-width: var(--field-border);
 		border-radius: var(--radius-sm);
-		font-size: 16px; /* prevents iOS zoom-on-focus */
+		font: var(--type-body); /* 16px: prevents iOS zoom-on-focus */
 	}
 	.comments :global(.ec-comment-form-submit) {
 		border-radius: var(--radius-sm);
-		font-weight: 500;
+		font: var(--type-label);
 	}
 </style>

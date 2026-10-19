@@ -1,10 +1,10 @@
 ---
 /**
  * The quick launcher dialog, on every page for signed-in people. It uses the
- * style guide's bw-launcher markup, the same dialog every other app's header
- * opens (those fetch /api/apps; the hub renders its list here directly). Any
- * [data-launcher-open] button opens it (the header has two), as do "/" and
- * ⌘K / Ctrl+K; type to filter, ↑↓ and Enter to open.
+ * style guide's bw-dialog shell with its bw-launcher markup, the same dialog
+ * every other app's header opens (those fetch /api/apps; the hub renders its
+ * list here directly). Any [data-launcher-open] button opens it (the header
+ * has two), as do "/" and ⌘K / Ctrl+K; type to filter, ↑↓ and Enter to open.
  */
 import type { Launcher } from "../lib/services";
 import AppIcon from "./AppIcon.astro";
@@ -23,7 +23,7 @@ const groups = [
 {
 	groups.length > 0 && (
 		<>
-			<dialog id="launcher" class="bw-launcher" aria-label="Apps">
+			<dialog id="launcher" class="bw-dialog bw-launcher" aria-label="Apps">
 				<div class="bw-launcher__head">
 					<input
 						type="search"

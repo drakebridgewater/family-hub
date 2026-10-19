@@ -1,5 +1,6 @@
 /* Bridgewater tokens 1.0.0. Generated from tokens.json by scripts/build.mjs. Do not edit; change tokens.json and run npm run build. Load before bundle.css. */
 :root {
+  color-scheme: light;
   --page: #fafcfc;
   --panel: #eef4f5;
   --line: #e4ebec;
@@ -70,6 +71,7 @@
   --page-max: 1080px;
 }
 :root[data-theme="dark"] {
+  color-scheme: dark;
   --page: #0a1b1e;
   --panel: #0f2428;
   --line: #1c373c;
@@ -106,6 +108,7 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --page: #0a1b1e;
     --panel: #0f2428;
     --line: #1c373c;

@@ -84,12 +84,12 @@ The style is vendored, not installed: `site/src/styles/bridgewater/` holds `brid
 its self-hosted Fira fonts, `tokens.json` (the head reads `theme-color` from it) and the shape data the Astro components
 render, and `site/public/` holds the favicons, app icons, `og-image.png` and `site.webmanifest`. All of it is committed,
 so the Docker build never fetches anything: the style repo is private and the build image has no git or credentials,
-and a stylesheet loaded from another host would break the hub whenever that host is down. The PNG icons and og-image are
-rendered in green from the style's SVGs (it only ships teal PNGs). After a new style release:
+and a stylesheet loaded from another host would break the hub whenever that host is down. The favicon, app icons and
+og-image are the style's own green set, copied from `assets/Favicons/green/`. After a new style release:
 
 ```bash
 cd ../style.bridgewater && git checkout v1.x.y   # the release to take
-cd ../family-hub/site && node scripts/sync-style.mjs ../../style.bridgewater   # or set STYLE_DIR; needs rsvg-convert
+cd ../family-hub/site && node scripts/sync-style.mjs ../../style.bridgewater   # or set STYLE_DIR
 ```
 
 `src/styles/bridgewater/VERSION` records which release is in the build.

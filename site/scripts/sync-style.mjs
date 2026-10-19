@@ -8,12 +8,10 @@
  *
  * The path defaults to $STYLE_DIR, then a sibling checkout of this repo
  * (../../style.bridgewater or ../../bridgewater-brand). Check out a release tag
- * there first, re-run this, then commit the result. Rendering the green PNG
- * icons needs rsvg-convert (brew install librsvg).
+ * there first, re-run this, then commit the result.
  */
 import { execFileSync } from "node:child_process";
 import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -43,39 +41,25 @@ const shapes = /^\s*var D = (\{.*\});$/m.exec(bundleJs)?.[1];
 if (!shapes) throw new Error("Couldn't find the shape data (var D = {...}) in components/bundle.js");
 writeFileSync(join(styles, "shapes.json"), JSON.stringify(JSON.parse(shapes)) + "\n");
 
-// Favicons and app icons. The style ships the SVG favicon in every hue but the PNGs only in
-// teal, so render this site's PNGs from the style's SVGs with teal swapped for SIG, using
-// the hex values in tokens.json.
-const tokens = JSON.parse(readFileSync(join(src, "tokens.json"), "utf8")).color.tokens;
-const hex = (name, theme) => tokens.find((t) => t.name === name)?.value[theme];
-const swaps = ["light", "dark"].flatMap((theme) =>
-	["", "-bright", "-tint"].map((s) => [hex(`teal${s}`, theme), hex(`${SIG}${s}`, theme)]).filter(([a, b]) => a && b),
-);
-const recolor = (svg) => swaps.reduce((out, [from, to]) => out.replaceAll(from, to).replaceAll(from.toUpperCase(), to), svg);
+// Favicons and app icons. The style ships a pre-rendered set per signature hue, so copy
+// SIG's folder across as it is. Each entry is the name to write into public/, and the name
+// the same icon has in the teal set at the top of assets/Favicons, which is what we fall
+// back to if the style ever ships no folder for SIG.
 const fav = join(src, "assets/Favicons");
-copyFileSync(join(fav, `favicon-${SIG}.svg`), join(pub, "favicon.svg"));
-const pngs = [
-	["favicon-32.png", `favicon-${SIG}.svg`, 32],
-	["apple-touch-icon.png", "apple-touch-icon.svg", 180],
-	["icon-192.png", "app-icon.svg", 192],
-	["icon-512.png", "app-icon.svg", 512],
-	["icon-maskable-512.png", "app-icon-maskable.svg", 512],
-	["og-image.png", "og-image.svg", 1200],
+const hue = join(fav, SIG);
+if (!existsSync(hue)) console.warn(`The style ships no ${SIG} icons (${hue}); copying its teal ones.`);
+const icons = [
+	["favicon.svg", `favicon-${SIG}.svg`],
+	["favicon-32.png"],
+	["apple-touch-icon.png"],
+	["icon-192.png"],
+	["icon-512.png"],
+	["icon-maskable-512.png"],
+	["og-image.png"],
 ];
-const tmp = join(tmpdir(), `sync-style-${process.pid}`);
-mkdirSync(tmp, { recursive: true });
-try {
-	execFileSync("rsvg-convert", ["--version"], { stdio: "ignore" });
-	for (const [png, svg, width] of pngs) {
-		const file = join(tmp, svg);
-		writeFileSync(file, recolor(readFileSync(join(fav, svg), "utf8")));
-		execFileSync("rsvg-convert", ["-w", String(width), file, "-o", join(pub, png)]);
-	}
-} catch (e) {
-	console.warn(`Could not render ${SIG} PNGs (${e.message.split("\n")[0]}); copying the style's teal ones.`);
-	for (const [png] of pngs) copyFileSync(join(fav, png), join(pub, png));
-} finally {
-	rmSync(tmp, { recursive: true, force: true });
+for (const [name, teal = name] of icons) {
+	const file = join(hue, name);
+	copyFileSync(existsSync(file) ? file : join(fav, teal), join(pub, name));
 }
 const manifest = JSON.parse(readFileSync(join(fav, "site.webmanifest.json"), "utf8"));
 writeFileSync(join(pub, "site.webmanifest"), JSON.stringify({ ...manifest, name: "Family hub", short_name: "Family", start_url: "/" }, null, 2) + "\n");

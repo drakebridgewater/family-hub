@@ -1,39 +1,49 @@
 ---
 /**
- * The prompt line, user@app:~/place (the bundle's Prompt, rendered on the server).
- * The user goes home to the family hub, the app to its own homepage, and the
- * path is the breadcrumb: every segment a link except the last.
+ * The prompt line, user@app:~/place (the bundle's Prompt, rendered on the server). Only the
+ * user is ours to give: the app is the subdomain and the path is the URL's, each segment a
+ * link except the last. `labels` may rename a segment, keyed by its path ({ "/posts/x": "Title" }).
  */
-export type PathSeg = string | { label: string; href?: string };
-
 interface Props {
 	user: string;
-	app: { label: string; href?: string };
-	path: PathSeg[];
+	/** The page's public URL (behind the proxy, Astro.url's host is the container's). */
+	url: URL;
+	labels?: Record<string, string>;
 	/** The person's home; the hub is social.bridgewater.digital, so on the hub itself this is "/". */
 	userHref?: string;
 }
-const { user, app, path, userHref = "https://social.bridgewater.digital" } = Astro.props;
-const segs = [{ label: "~", href: "/" }, ...path].map((s) => (typeof s === "string" ? { label: s } : s));
+const { user, url, labels = {}, userHref = "https://social.bridgewater.digital" } = Astro.props;
+
+const ZONE = "bridgewater.digital";
+const host =
+	url.hostname === ZONE ? "www" : url.hostname.endsWith(`.${ZONE}`) ? url.hostname.slice(0, -ZONE.length - 1) : url.hostname;
+let acc = "";
+const segs = [{ label: "~", href: "/" }];
+for (const part of url.pathname.split("/").filter(Boolean)) {
+	acc += `/${part}`;
+	let label = part;
+	try {
+		label = decodeURIComponent(part);
+	} catch {}
+	segs.push({ label: labels[acc] || label, href: acc });
+}
 ---
 
 <nav class="bw-prompt" aria-label="You are here">
-	<a class="bw-prompt__user" href={userHref} title="Home">{user}</a><span class="bw-prompt__sep">@</span>{
-		app.href ? (
-			<a class="bw-prompt__host" href={app.href} title={`${app.label} home`}>{app.label}</a>
-		) : (
-			<span class="bw-prompt__host">{app.label}</span>
-		)
-	}<span class="bw-prompt__sep">:</span>{
+	<a class="bw-prompt__user" href={userHref} title="Home">{user}</a><span class="bw-prompt__sep">@</span><a
+		class="bw-prompt__host"
+		href="/"
+		title={`${host} home`}>{host}</a
+	><span class="bw-prompt__sep">:</span>{
 		segs.map((seg, i) => {
 			const last = i === segs.length - 1;
 			return (
 				<>
 					{i > 0 && <span class="bw-prompt__sep">/</span>}
-					{seg.href && !last ? (
-						<a class="bw-prompt__seg" href={seg.href}>{seg.label}</a>
+					{last ? (
+						<span class="bw-prompt__seg" aria-current="page">{seg.label}</span>
 					) : (
-						<span class="bw-prompt__seg" aria-current={last ? "page" : undefined}>{seg.label}</span>
+						<a class="bw-prompt__seg" href={seg.href}>{seg.label}</a>
 					)}
 				</>
 			);

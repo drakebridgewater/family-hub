@@ -1,4 +1,4 @@
-/* Bridgewater tokens 1.0.0. Generated from tokens.json by scripts/build.mjs. Do not edit; change tokens.json and run npm run build. Load before bundle.css. */
+/* Bridgewater tokens 1.1.0. Generated from tokens.json by scripts/build.mjs. Do not edit; change tokens.json and run npm run build. Load before bundle.css. */
 :root {
   color-scheme: light;
   --page: #fafcfc;
@@ -218,6 +218,12 @@ img { max-width: 100%; }
 .bw-lt-idot { fill: none; stroke: var(--sig); stroke-width: 0.7; }
 .bw-lt-pad { fill: none; stroke: var(--sig); stroke-width: 0.6; }
 .bw-lt-dot { fill: var(--sig-bright); stroke: none; }
+/* With a site name above (Wordmark site, and Header on every subdomain): two links in one SVG. */
+.bw-lt-halo { fill: var(--sig-tint); }
+.bw-lt-hit { fill: transparent; }
+.bw-lt-link { color: var(--ink); cursor: pointer; }
+.bw-lt-link:focus { outline: none; }
+.bw-lt-link:focus-visible .bw-lt-hit { stroke: var(--sig); stroke-width: 1; }
 
 /* ---------- prompt ---------- */
 .bw-prompt { display: flex; flex-wrap: wrap; align-items: baseline; min-width: 0; font: var(--type-prompt); color: var(--ink); overflow-wrap: anywhere; }
@@ -281,7 +287,7 @@ img { max-width: 100%; }
    (the SVG with the mark is 1.64 times the logotype height). */
 @media (max-width: 559px) {
   .bw-header__bar { gap: var(--space-3); }
-  .bw-header__bar .bw-lt { height: 33px; width: auto; }
+  .bw-header__bar .bw-lt:not(.bw-lt--site) { height: 33px; width: auto; }
 }
 
 /* ---------- dialog: one shell for every modal, the launcher included ---------- */

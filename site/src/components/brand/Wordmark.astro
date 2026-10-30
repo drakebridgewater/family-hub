@@ -1,42 +1,121 @@
 ---
-/** The bridgewater.digital logotype with the mark (the bundle's Wordmark, rendered on the server). */
+/**
+ * The bridgewater.digital logotype with the mark (the bundle's Wordmark, rendered on the server).
+ * With `site`, the site name sits above it in the logotype's monoline letters, ending in a solder
+ * point whose trace runs over the name and comes down into the wordmark's junction: two links in
+ * one SVG, the name to `siteHref` and the wordmark to `href`.
+ */
 import shapes from "../../styles/bridgewater/shapes.json";
+import Logo from "./Logo.astro";
 
 interface Props {
-	/** Logotype height in px. */
+	/** Logotype height in px; 28 alone, 20 (its minimum) under a site name. */
 	height?: number;
 	href?: string;
+	/** The site name above the wordmark, e.g. "social". Left out if a character has no glyph. */
+	site?: string;
+	siteHref?: string;
 }
-const { height = 28, href } = Astro.props;
-const { lt, mark: m } = shapes;
-const ox = 39;
-const oy = 6;
-const vb = [-1, -2, 42 + lt.w, 35];
+const { href, siteHref = "/" } = Astro.props;
+const { lt } = shapes;
+const glyphs = shapes.glyphs as Record<string, [number, string, number?]>;
+const r1 = (n: number) => Math.round(n * 10) / 10;
+
+/* The name laid out in glyph units, as the bundle's siteWord: null when a character has no glyph. */
+const name = Astro.props.site?.toLowerCase() ?? "";
+const word = (() => {
+	if (!name) return null;
+	let x = 0;
+	const paths: [number, string][] = [];
+	const dots: number[] = [];
+	for (const ch of name) {
+		const g = glyphs[ch];
+		if (!g) return null;
+		paths.push([x, g[1]]);
+		if (g[2]) dots.push(x + (ch === "j" ? 3 : 0));
+		x += g[0] + 3.6;
+	}
+	return { paths, dots, w: x - 3.6 };
+})();
+
+/* The geometry of the bundle's SiteLogo, in the Logo's units. */
+const site = word
+	? (() => {
+			const xs = 24;
+			const jx = lt.dotx + 39;
+			const jy = 3;
+			// a long name shrinks so it and its dot stay left of the trace coming down into the junction
+			const S = Math.min(1.9, (jx - 7 - xs) / (word.w + 6.8));
+			const base = /[gjpqy]/.test(name) ? -15 : -7;
+			const top = base - 14 * S;
+			const yb = top - 5;
+			const dx = xs + (word.w + 4) * S;
+			const dy = base - 1.1 * S;
+			const pr = 4.2;
+			const dots = word.dots.map((ix) => [xs + ix * S, top + 1.9 * S] as const);
+			const drops = [...dots.map(([cx, cy]) => [cx, cy - 2] as const), [jx, jy] as const];
+			// A bus at yb from the solder point out to each drop, with 2.5 chamfers where it turns down.
+			const xsAll = [...drops.map((d) => d[0]), dx];
+			const L = Math.min(...xsAll);
+			const R = Math.max(...xsAll);
+			const c = 2.5;
+			let bus = `M${dx} ${dy - pr} V${yb + c}`;
+			if (L < dx) bus += ` M${dx} ${yb + c} L${dx - c} ${yb} H${L + c} L${L} ${yb + c}`;
+			if (R > dx) bus += ` M${dx} ${yb + c} L${dx + c} ${yb} H${R - c} L${R} ${yb + c}`;
+			for (const [x, y] of drops) bus += ` M${x} ${x === L || x === R ? yb + c : yb} V${y}`;
+			return { xs, S, top, yb, dx, dy, pr, base, dots, bus, stroke: Math.min(2.2, 1.16 * S) / S };
+		})()
+	: null;
+
+const height = Astro.props.height ?? (site ? 20 : 28);
+const vb = site ? [-1, site.yb - 1.5, 42 + lt.w, 33 - site.yb + 1.5] : [-1, -2, 42 + lt.w, 35];
 const k = (height * 1.5) / 32;
 const Tag = href ? "a" : "span";
 ---
 
-<Tag class="bw-wordmark" href={href} aria-label="bridgewater.digital">
-	<svg
-		class="bw-lt"
-		viewBox={vb.join(" ")}
-		width={Math.round(vb[2] * k * 10) / 10}
-		height={Math.round(vb[3] * k * 10) / 10}
-		aria-hidden="true"
-		focusable="false"
-	>
-		<g transform="scale(0.5)">
-			<path class="bw-mark-ridge" d={m.ridge} />
-			<path class="bw-mark-trace" d={m.trace} />
-			{m.pads.map(([cx, cy, r]) => <circle class="bw-mark-pad" cx={cx} cy={cy} r={r} />)}
-			<circle class="bw-mark-dot" cx={m.dot[0]} cy={m.dot[1]} r={m.dot[2]} />
-		</g>
-		<g class="bw-lt-glyph" transform={`translate(${ox} ${oy})`}>
-			{lt.paths.map(([x, d]) => <path transform={`translate(${x} 0)`} d={d as string} />)}
-		</g>
-		<path class="bw-lt-trace" d={lt.hbus} />
-		{lt.idots.map((x) => <circle class="bw-lt-idot" cx={x + ox} cy={1.9 + oy} r="1.35" />)}
-		<circle class="bw-lt-pad" cx={lt.dotx + ox} cy={13.1 + oy} r="2.8" />
-		<circle class="bw-lt-dot" cx={lt.dotx + ox} cy={13.1 + oy} r="1.7" />
-	</svg>
-</Tag>
+{
+	site ? (
+		<span class="bw-wordmark">
+			<svg class="bw-lt bw-lt--site" viewBox={vb.join(" ")} width={r1(vb[2] * k)} height={r1(vb[3] * k)} focusable="false">
+				<path class="bw-lt-trace" d={site.bus} />
+				<a class="bw-lt-link" href={href ?? "https://social.bridgewater.digital"} aria-label="bridgewater.digital">
+					<rect class="bw-lt-hit" x="-1" y="-2" width={42 + lt.w} height="35" />
+					<Logo />
+				</a>
+				<a class="bw-lt-link" href={siteHref} aria-label={`${name} home`}>
+					<rect
+						class="bw-lt-hit"
+						x={site.xs - 2}
+						y={site.yb - 1.5}
+						width={site.dx + site.pr + 4 - site.xs}
+						height={site.base + 7 - site.yb + 1.5}
+					/>
+					<g
+						class="bw-lt-glyph bw-lt-site"
+						transform={`translate(${site.xs} ${site.top}) scale(${site.S})`}
+						style={`stroke-width:${site.stroke}`}
+					>
+						{word!.paths.map(([x, d]) => <path transform={`translate(${x} 0)`} d={d} />)}
+					</g>
+					{site.dots.map(([cx, cy]) => <circle class="bw-lt-idot" cx={cx} cy={cy} r="2" style="stroke-width:0.9" />)}
+					<circle class="bw-lt-halo" cx={site.dx} cy={site.dy} r={site.pr + 1.2} />
+					<circle class="bw-lt-pad" cx={site.dx} cy={site.dy} r={site.pr} style="stroke-width:0.8" />
+					<circle class="bw-lt-dot" cx={site.dx} cy={site.dy} r="2.55" />
+				</a>
+			</svg>
+		</span>
+	) : (
+		<Tag class="bw-wordmark" href={href} aria-label="bridgewater.digital">
+			<svg
+				class="bw-lt"
+				viewBox={vb.join(" ")}
+				width={r1(vb[2] * k)}
+				height={r1(vb[3] * k)}
+				aria-hidden="true"
+				focusable="false"
+			>
+				<Logo />
+			</svg>
+		</Tag>
+	)
+}

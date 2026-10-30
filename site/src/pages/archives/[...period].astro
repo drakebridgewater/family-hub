@@ -31,10 +31,6 @@ const heading = month
 Astro.response.headers.set("Cache-Control", "private, no-store");
 ---
 
-<Base
-	title={heading}
-	user={user}
-	path={["archives", ...(month ? [{ label: String(year), href: `/archives/${year}` }, String(month).padStart(2, "0")] : [String(year)])]}
->
+<Base title={heading} user={user}>
 	<PostList posts={posts} heading={heading} eyebrow="Archive" />
 </Base>

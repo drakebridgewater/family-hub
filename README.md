@@ -74,9 +74,11 @@ forged header just gets the public view.
 ## Look and feel
 
 The site uses the shared bridgewater.digital style ([style.bridgewater](https://github.com/drakebridgewater/style.bridgewater)),
-with **green** as its signature hue. The header follows that guide: signature strip, wordmark and theme toggle, an ink rule,
-then the prompt line `user@social:~/place`. The user name and `social` both lead back to the home page here, and the
-path is the breadcrumb. Pages use the guide's layouts: Home (display greeting, numbered sections, the app grid, the
+with **green** as its signature hue. The header follows that guide: signature strip, the site name (`social.`) over the
+wordmark, the theme toggle, an ink rule, then the prompt line `user@social:~/place`. The site name, the wordmark, the user
+name and `social` all lead back to the home page here. Both the site name and the prompt are read off the public URL
+(`EMDASH_SITE_URL` and the request path), so the path is the breadcrumb; a page may only relabel a segment with Base's
+`labels`. Pages use the guide's layouts: Home (display greeting, numbered sections, the app grid, the
 skyline), Settings for *Customize home*, Focus for sign-in prompts and Not found, and a page head on lists, posts and
 *Manage apps*. Every color, size and font is a token; nothing in `src/` sets a hex value or a raw font size.
 

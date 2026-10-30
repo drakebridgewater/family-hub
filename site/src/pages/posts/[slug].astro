@@ -49,7 +49,7 @@ const page = locked
 
 {
 	locked ? (
-		<Base title="Family only" user={user} page={page} path={["posts", "family-only"]}>
+		<Base title="Family only" user={user} page={page}>
 			<section class="bw-focus locked">
 				<Icon name="lock" size={24} />
 				<h1>This post is for family</h1>
@@ -60,7 +60,7 @@ const page = locked
 			</section>
 		</Base>
 	) : (
-		<Base title={post.data.title} description={post.data.excerpt} user={user} page={page} path={["posts", slug]}>
+		<Base title={post.data.title} description={post.data.excerpt} user={user} page={page}>
 			<article class="article reading">
 				<div class="bw-pagehead">
 					<div class="bw-pagehead__text">

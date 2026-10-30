@@ -14,6 +14,7 @@ import { execFileSync } from "node:child_process";
 import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { runInNewContext } from "node:vm";
 
 const SIG = "green"; // this site's signature hue; keep in step with data-sig in Base.astro
 const site = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -39,7 +40,11 @@ copyFileSync(join(src, "tokens.json"), join(styles, "tokens.json"));
 const bundleJs = readFileSync(join(src, "components/bundle.js"), "utf8");
 const shapes = /^\s*var D = (\{.*\});$/m.exec(bundleJs)?.[1];
 if (!shapes) throw new Error("Couldn't find the shape data (var D = {...}) in components/bundle.js");
-writeFileSync(join(styles, "shapes.json"), JSON.stringify(JSON.parse(shapes)) + "\n");
+// The site name's glyphs (2.0+) are a JS literal, not JSON, so evaluate just that literal.
+const glyphs = /^\s*var GLYPHS = (\{[\s\S]*?\n\s*\});$/m.exec(bundleJs)?.[1];
+if (!glyphs) throw new Error("Couldn't find the site name glyphs (var GLYPHS = {...}) in components/bundle.js");
+const glyphMap = runInNewContext(`(${glyphs})`);
+writeFileSync(join(styles, "shapes.json"), JSON.stringify({ ...JSON.parse(shapes), glyphs: glyphMap }) + "\n");
 
 // Favicons and app icons. The style ships a pre-rendered set per signature hue, so copy
 // SIG's folder across as it is. Each entry is the name to write into public/, and the name

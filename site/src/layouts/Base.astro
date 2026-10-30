@@ -8,7 +8,7 @@ import { canPost, EDITOR_URL } from "../lib/editor-roles";
 import { isAppAdmin, launcherFor, type Launcher } from "../lib/services";
 import AppLauncher from "../components/AppLauncher.astro";
 import Icon from "../components/brand/Icon.astro";
-import Prompt, { type PathSeg } from "../components/brand/Prompt.astro";
+import Prompt from "../components/brand/Prompt.astro";
 import Skyline from "../components/brand/Skyline.astro";
 import ThemeToggle from "../components/brand/ThemeToggle.astro";
 import Wordmark from "../components/brand/Wordmark.astro";
@@ -26,8 +26,8 @@ interface Props {
 	tabs?: Array<{ id: string; label: string; icon: Parameters<typeof Icon>[0]["name"] }>;
 	/** Tab shown first on phones. */
 	activeTab?: string;
-	/** Breadcrumb after ~ in the prompt line, e.g. ["settings"] or [{ label: "tag", href: "/tag" }, "summer"]. */
-	path?: PathSeg[];
+	/** The prompt line follows the URL; this only renames segments with ids in them, e.g. { "/posts/3f9a": "Summer" }. */
+	labels?: Record<string, string>;
 	/** The skyline illustration above the footer: the home page only. */
 	skyline?: boolean;
 	/**
@@ -39,7 +39,7 @@ interface Props {
 	launcher?: Launcher;
 }
 
-const { title, description, user = null, tabs = [], activeTab, path = [], skyline = false } = Astro.props;
+const { title, description, user = null, tabs = [], activeTab, labels, skyline = false } = Astro.props;
 const [settings, menu] = await Promise.all([getSiteSettings(), getMenu("primary")]);
 const menuItems = menu?.items ?? [];
 const siteTitle = settings?.title || "The Bridgewaters";
@@ -59,15 +59,17 @@ const pageColor = tokens.color.tokens.find((t) => t.name === "page")!.value as {
 const isCurrent = (url: string) => url === Astro.url.pathname;
 const launcher = user ? (Astro.props.launcher ?? (await launcherFor(user))) : null;
 
-// The prompt names this app by its host (social.bridgewater.digital -> "social"); the footer shows the host.
-const host = (() => {
+// This page's public URL: the prompt and the site name over the wordmark are read off it, and the footer shows its host.
+const publicUrl = (() => {
 	try {
-		return new URL(siteUrl).hostname;
+		return new URL(Astro.url.pathname, siteUrl);
 	} catch {
-		return "social.bridgewater.digital";
+		return new URL(Astro.url.pathname, "https://social.bridgewater.digital");
 	}
 })();
-const appName = host.split(".")[0] || "social";
+const host = publicUrl.hostname;
+// The root site has no name over its wordmark; every subdomain shows its own (social.bridgewater.digital -> "social").
+const siteName = host === "bridgewater.digital" ? undefined : host.replace(/\.bridgewater\.digital$/, "");
 const firstName = user?.name.split(" ")[0] || user?.username;
 const hasApps = !!launcher && (launcher.favorites.length > 0 || launcher.sections.length > 0);
 const accountLinks = user
@@ -112,7 +114,7 @@ const accountLinks = user
 		<header class="bw-header">
 			<div class="bw-strip" aria-hidden="true"></div>
 			<div class="bw-container bw-header__bar">
-				<Wordmark href="/" />
+				<Wordmark href="/" site={siteName} siteHref="/" />
 				{/* The guide's Header nav: links, account, apps. Below 900px all of it folds into "Menu". */}
 				<nav class="bw-nav" aria-label={menu?.label ?? "Site"}>
 					{
@@ -246,7 +248,7 @@ const accountLinks = user
 			</div>
 			<div class="bw-header__rule"></div>
 			<div class="bw-container bw-header__where">
-				<Prompt user={user?.username ?? "you"} app={{ label: appName, href: "/" }} userHref="/" path={path} />
+				<Prompt user={user?.username ?? "you"} url={publicUrl} labels={labels} userHref="/" />
 			</div>
 		</header>
 		{launcher && <AppLauncher launcher={launcher} />}

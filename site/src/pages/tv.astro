@@ -1,0 +1,270 @@
+---
+/**
+ * Watch on your TV: which app to install, the server address to type in, and
+ * a box for the Quick Connect code the TV shows. The hub approves the code for
+ * the signed-in person's own Jellyfin account (see lib/jellyfin.ts).
+ */
+import Base from "../layouts/Base.astro";
+import { getFamilyUser } from "../lib/auth";
+import {
+	authorizeCode,
+	jellyfinAccount,
+	JELLYFIN_PUBLIC_URL,
+	OTHER_CLIENTS_URL,
+	TV_PLATFORMS,
+	tvEnabled,
+	type ConnectResult,
+} from "../lib/jellyfin";
+
+if (!tvEnabled()) return Astro.rewrite("/404");
+
+const user = await getFamilyUser(Astro.request);
+if (!user) return Astro.redirect("/login?next=/tv", 302);
+
+Astro.response.headers.set("Cache-Control", "private, no-store");
+
+let result: ConnectResult | null = null;
+let typed = "";
+if (Astro.request.method === "POST") {
+	// Same-origin form posts only (the page is public, so guard against CSRF).
+	const siteOrigin = new URL(process.env.EMDASH_SITE_URL ?? Astro.url.origin).origin;
+	if (Astro.request.headers.get("origin") !== siteOrigin) return new Response("Forbidden", { status: 403 });
+	const form = await Astro.request.formData();
+	typed = String(form.get("code") ?? "").slice(0, 20);
+	result = await authorizeCode(user.username, typed);
+	if (result.ok) typed = "";
+	else Astro.response.status = result.reason === "rate-limited" ? 429 : result.reason === "invalid" ? 400 : 200;
+}
+
+const account = result?.ok ? { state: "ok" as const, user: result.user } : await jellyfinAccount(user.username);
+const serverHost = JELLYFIN_PUBLIC_URL.replace(/^https?:\/\//, "");
+
+const problems: Record<Exclude<ConnectResult, { ok: true }>["reason"], { state: string; text: string }> = {
+	invalid: { state: "attention", text: "Type the 6 digits the TV shows." },
+	"bad-code": {
+		state: "attention",
+		text: "That code didn't match. Codes expire after a few minutes, so get a fresh one on the TV and try again.",
+	},
+	"no-account": { state: "attention", text: "You don't have a Streaming account yet. Ask a family admin to add you." },
+	disabled: { state: "down", text: "Quick Connect is turned off on the Streaming server. Let a family admin know." },
+	"rate-limited": { state: "attention", text: "Too many tries. Wait a few minutes, then get a fresh code on the TV." },
+	unavailable: { state: "down", text: "Streaming isn't answering right now. Try again in a minute." },
+};
+const problem = result && !result.ok ? problems[result.reason] : null;
+---
+
+<Base title="Watch on your TV" user={user}>
+	<div class="bw-pagehead">
+		<div class="bw-pagehead__text">
+			<h1>Watch on your TV</h1>
+			<p class="bw-pagehead__meta">Three steps, about two minutes. Have your TV remote handy.</p>
+		</div>
+	</div>
+
+	{
+		result?.ok && (
+			<div class="bw-panel done" role="status">
+				<h2 class="bw-panel__title">Your TV is signed in</h2>
+				<p>
+					It's using your account, <strong>{result.user.name}</strong>. Pick something to watch. Setting up another TV?
+					Do step 3 again with its code.
+				</p>
+			</div>
+		)
+	}
+
+	<section class="bw-section" aria-labelledby="app-title">
+		<div class="bw-section__head">
+			<h2 id="app-title"><span class="bw-secnum">01</span>Get the app</h2>
+		</div>
+		<ul class="bw-rows platforms" role="list">
+			{
+				TV_PLATFORMS.map(({ platform, store, apps: [first, ...others] }) => (
+					<li class="platform">
+						<span class="platform__name">{platform}</span>
+						<span class="platform__app">
+							<span>
+								<strong>{first.name}</strong>
+								{first.note && <span class="platform__note"> · {first.note}</span>}
+							</span>
+							{others.map((app) => (
+								<span>
+									or <strong>{app.name}</strong>
+									{app.note && <span class="platform__note"> · {app.note}</span>}
+								</span>
+							))}
+							<span class="platform__where">Search for {others.length ? "either" : "it"} in {store}</span>
+						</span>
+					</li>
+				))
+			}
+		</ul>
+		<p class="hint">
+			Something else, like an LG TV or a game console? <a href={OTHER_CLIENTS_URL} rel="noopener">See every Jellyfin app</a>.
+		</p>
+	</section>
+
+	{
+		account.state === "no-account" ? (
+			<section class="bw-section">
+				<p class="empty">
+					You don't have a Streaming account yet, so there's nothing to sign the TV into. Ask a family admin to add you, then
+					come back here.
+				</p>
+			</section>
+		) : (
+			<>
+				<section class="bw-section" aria-labelledby="server-title">
+					<div class="bw-section__head">
+						<h2 id="server-title"><span class="bw-secnum">02</span>Add the server</h2>
+					</div>
+					<p>Open the app on the TV. When it asks for a server, enter this address:</p>
+					<div class="server">
+						<code class="server__addr" id="server-addr">{serverHost}</code>
+						<button type="button" class="bw-btn bw-btn--secondary bw-btn--sm" data-copy="server-addr" data-copy-text={JELLYFIN_PUBLIC_URL}>
+							Copy
+						</button>
+					</div>
+					<p class="hint">Some apps find it on their own. If yours lists it, just pick it.</p>
+				</section>
+
+				<section class="bw-section" aria-labelledby="code-title">
+					<div class="bw-section__head">
+						<h2 id="code-title"><span class="bw-secnum">03</span>Enter the code</h2>
+					</div>
+					<p>
+						On the sign-in screen, choose <strong>Quick Connect</strong>. The TV shows a 6-digit code. Type it here and the TV
+						signs in as you.
+					</p>
+					{account.state === "unavailable" && !problem && (
+						<p class="bw-status" data-state="down">Streaming isn't answering right now. You can still try.</p>
+					)}
+					<form method="post" class="bw-form code-form">
+						<div class="bw-field" data-invalid={problem ? "" : undefined}>
+							<label class="bw-field__label" for="code">Code from your TV</label>
+							<div class="code-row">
+								<input
+									id="code"
+									name="code"
+									class="bw-field__control bw-field__control--mono code"
+									type="text"
+									inputmode="numeric"
+									autocomplete="one-time-code"
+									pattern="[0-9 \-]{6,9}"
+									maxlength="9"
+									placeholder="123456"
+									required
+									value={typed}
+									aria-describedby={problem ? "code-error" : undefined}
+									autofocus={!!result && !result.ok}
+								/>
+								<button type="submit" class="bw-btn bw-btn--primary">Connect TV</button>
+							</div>
+							{problem && (
+								<p class="bw-status code-error" data-state={problem.state} id="code-error" role="alert">
+									{problem.text}
+								</p>
+							)}
+						</div>
+					</form>
+					<p class="hint">
+						No Quick Connect on your TV's sign-in screen? Sign in there with your family username and password instead.
+					</p>
+				</section>
+			</>
+		)
+	}
+</Base>
+
+<script>
+	// Copy the server address; if the clipboard is blocked, select it so it can be copied by hand.
+	for (const button of document.querySelectorAll<HTMLButtonElement>("[data-copy]")) {
+		button.addEventListener("click", async () => {
+			const target = document.getElementById(button.dataset.copy!);
+			try {
+				await navigator.clipboard.writeText(button.dataset.copyText || target?.textContent || "");
+				button.textContent = "Copied";
+				setTimeout(() => (button.textContent = "Copy"), 2000);
+			} catch {
+				if (target) getSelection()?.selectAllChildren(target);
+			}
+		});
+	}
+</script>
+
+<style>
+	.bw-section {
+		max-width: var(--reading);
+	}
+	.done {
+		max-width: var(--reading);
+		margin-bottom: var(--space-7);
+	}
+	.hint {
+		margin-top: var(--space-3);
+		font: var(--type-small);
+		color: var(--comment);
+	}
+	.platform {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+		gap: var(--space-1) var(--space-4);
+		padding: var(--space-3) 0;
+		border-bottom: var(--hairline) solid var(--line);
+	}
+	.platform__name {
+		font: var(--type-label);
+		color: var(--comment);
+	}
+	.platform__app {
+		display: grid;
+		gap: var(--space-1);
+		min-width: 0;
+	}
+	.platform__where,
+	.platform__note {
+		font: var(--type-small);
+		color: var(--comment);
+	}
+	.server {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-3);
+		margin-top: var(--space-3);
+	}
+	.server__addr {
+		font: var(--type-h3);
+		font-family: var(--font-mono);
+		color: var(--ink);
+		overflow-wrap: anywhere;
+		min-width: 0;
+	}
+	.code-form {
+		margin-top: var(--space-4);
+		max-width: none;
+	}
+	.code-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-3);
+	}
+	.code {
+		width: 12ch;
+		flex: 0 0 auto;
+		letter-spacing: 0.2em;
+	}
+	.code-error {
+		white-space: normal;
+		align-items: baseline;
+		margin-top: var(--space-1);
+	}
+	@media (max-width: 559px) {
+		.platform {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.code {
+			flex: 1 1 auto;
+		}
+	}
+</style>

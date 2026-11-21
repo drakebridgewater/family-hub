@@ -1,4 +1,5 @@
 ---
+import { isJellyfinApp, tvEnabled } from "../lib/jellyfin";
 import type { Service } from "../lib/services";
 import AppIcon from "./AppIcon.astro";
 
@@ -6,17 +7,60 @@ interface Props {
 	svc: Service;
 }
 const { svc } = Astro.props;
+// The Streaming (Jellyfin) tile also links to the "Watch on your TV" page. A sibling, since links can't nest.
+const tv = tvEnabled() && isJellyfinApp(svc);
 ---
 
-<a class="app" href={svc.url} rel="noopener" title={svc.description}>
+<a class:list={["app", { "app--tv": tv }]} href={svc.url} rel="noopener" title={svc.description}>
 	<AppIcon name={svc.name} icon={svc.icon} />
 	<span class="bw-apps__name app__name">{svc.name}</span>
 	{svc.description && <span class="bw-apps__desc app__desc">{svc.description}</span>}
 </a>
+{
+	tv && (
+		<a class="app__tv" href="/tv" title={`Install ${svc.name} on your TV and sign it in`}>
+			Set up a TV
+		</a>
+	)
+}
 
 <style>
 	/* A row of the brand's app grid (ul.bw-apps in ServiceGrid, which also draws the compact icon view). */
 	.app {
 		-webkit-tap-highlight-color: transparent;
+	}
+	:global(.bw-apps li:has(> .app__tv)) {
+		position: relative;
+	}
+	/* Detailed rows: room on the right for the "Set up a TV" button. */
+	.app--tv {
+		padding-right: 12ch;
+	}
+	/* Beats the style's ".bw-apps a" row rule. Detailed rows: a small button at the right end. */
+	:global(.bw-apps) a.app__tv {
+		position: absolute;
+		top: 50%;
+		right: 0;
+		transform: translateY(-50%);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: var(--control-sm);
+		min-height: var(--control-sm);
+		padding: 0 var(--space-2);
+		border: var(--hairline) solid var(--line-strong);
+		border-radius: var(--radius-sm);
+		background: var(--page);
+		color: var(--teal);
+		font: var(--type-small);
+		white-space: nowrap;
+		text-decoration: none;
+	}
+	:global(.bw-apps) a.app__tv:hover {
+		border-color: var(--teal);
+		background: var(--panel);
+	}
+	:global(.bw-apps) a.app__tv:focus-visible {
+		outline: var(--focus-width) solid var(--sig);
 	}
 </style>

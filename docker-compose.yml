@@ -36,6 +36,10 @@ services:
       ACCOUNT_SECURITY_URL: ${ACCOUNT_SECURITY_URL:-}
       # Groups that can manage the app list for everyone at /admin/apps
       ADMIN_GROUPS: ${ADMIN_GROUPS:-admin}
+      # --- Watch on your TV (Jellyfin Quick Connect, see site/src/lib/jellyfin.ts) ---
+      JELLYFIN_INTERNAL_URL: ${JELLYFIN_INTERNAL_URL:-http://jellyfin:8096}
+      JELLYFIN_PUBLIC_URL: ${JELLYFIN_PUBLIC_URL:-}
+      JELLYFIN_API_KEY: ${JELLYFIN_API_KEY:-}
       # --- Schedule ---
       CALENDAR_FEEDS: ${CALENDAR_FEEDS:-}
       SCHEDULE_VISIBILITY: ${SCHEDULE_VISIBILITY:-members}

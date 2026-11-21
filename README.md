@@ -60,6 +60,14 @@ forged header just gets the public view.
   there needs Authelia 4.39+). Point `ACCOUNT_SECURITY_URL` elsewhere, e.g. lldap's change-password page, if you prefer.
 - **Give someone access:** add them to Authelia's `users_database.yml` with `family` or `extended-family` groups.
   Tiles only *hide* links; each service still needs its own Authelia rule.
+- **Watch on your TV:** *Watch on your TV* in the account menu (and the small **TV** badge on the Streaming tile) opens
+  `/tv`. It lists the app to install on Apple TV, Android TV / Google TV, Roku and Samsung, shows the server address
+  to type in, and has a box for the Quick Connect code the TV shows. The hub approves that code for the person's own
+  Jellyfin account, so nobody types a password with a remote. Set `JELLYFIN_PUBLIC_URL` and `JELLYFIN_API_KEY`
+  (Jellyfin → Dashboard → API Keys), and turn on Quick Connect (Dashboard → General); with no key, the page and
+  its links don't exist. Hub usernames must match Jellyfin usernames (case doesn't matter), which they do with the
+  Jellyfin LDAP plugin. The API key is a full Jellyfin admin credential: keep `.env` private. Edit the recommended
+  apps in `TV_PLATFORMS` in `site/src/lib/jellyfin.ts`.
 - **Schedule:** set `CALENDAR_FEEDS="Family|https://…ics,Kids|https://…ics"` (Google Calendar → *Secret address in iCal format*).
 
 ## What the site shows from EmDash

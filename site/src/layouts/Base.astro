@@ -6,6 +6,7 @@ import type { FamilyUser } from "../lib/auth";
 import { logoutUrl, securityUrl } from "../lib/auth";
 import { canPost, EDITOR_URL } from "../lib/editor-roles";
 import { isAppAdmin, launcherFor, type Launcher } from "../lib/services";
+import { tvEnabled } from "../lib/jellyfin";
 import AppLauncher from "../components/AppLauncher.astro";
 import Icon from "../components/brand/Icon.astro";
 import Prompt from "../components/brand/Prompt.astro";
@@ -76,6 +77,7 @@ const accountLinks = user
 	? [
 			...(canPost(user.groups) ? [{ label: "Write and edit", href: EDITOR_URL }] : []),
 			{ label: "Customize home", href: "/settings" },
+			...(tvEnabled() ? [{ label: "Watch on your TV", href: "/tv" }] : []),
 			...(isAppAdmin(user) ? [{ label: "Manage apps", href: "/admin/apps" }] : []),
 			{ label: "Password and security", href: securityUrl() },
 			{ label: "Sign out", href: logoutUrl() },

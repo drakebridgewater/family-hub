@@ -7,6 +7,30 @@
 name: family-hub
 
 services:
+  family-hub-db:
+    container_name: family-hub-db
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-America/Los_Angeles}
+      # Only used when the data dir is empty (first start); the role is the superuser.
+      POSTGRES_USER: ${DB_USER:-familyhub}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-familyhub}
+    volumes:
+      - ${DB_DATA:-/mnt/cache/appdata/family-hub/db}:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - default
+    labels:
+      net.unraid.docker.managed: composeman
+      net.unraid.docker.icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/postgres.png
+
   family-hub:
     container_name: family-hub
     image: family-hub:latest
@@ -14,6 +38,9 @@ services:
       # EmDash has no official image. This builds the Astro/EmDash site in ./site.
       context: ${BUILD_CONTEXT:-./site}
     restart: unless-stopped
+    depends_on:
+      family-hub-db:
+        condition: service_healthy
     user: "${PUID:-99}:${PGID:-100}"   # Unraid nobody:users
     environment:
       TZ: ${TZ:-America/Los_Angeles}
@@ -21,10 +48,10 @@ services:
       # --- EmDash ---
       EMDASH_SITE_URL: https://${SITE_HOST}   # passkeys are bound to this exact host
       EMDASH_ENCRYPTION_KEY: ${EMDASH_ENCRYPTION_KEY}
-      # --- Postgres (existing server on the proxy network) ---
+      # --- Postgres (the stack's own family-hub-db, on the default network) ---
       # Keep DB_PASSWORD URL-safe (e.g. openssl rand -hex 24); it's embedded in DATABASE_URL.
-      DATABASE_URL: postgres://${DB_USER:-familyhub}:${DB_PASSWORD}@${DB_HOST:-postgresql17}:${DB_PORT:-5432}/${DB_NAME:-familyhub}
-      PGHOST: ${DB_HOST:-postgresql17}
+      DATABASE_URL: postgres://${DB_USER:-familyhub}:${DB_PASSWORD}@${DB_HOST:-family-hub-db}:${DB_PORT:-5432}/${DB_NAME:-familyhub}
+      PGHOST: ${DB_HOST:-family-hub-db}
       PGPORT: ${DB_PORT:-5432}
       PGUSER: ${DB_USER:-familyhub}
       PGPASSWORD: ${DB_PASSWORD}
@@ -49,6 +76,7 @@ services:
       - ${APPDATA:-/mnt/user/appdata/family-hub}/uploads:/app/uploads   # media
       - ${APPDATA:-/mnt/user/appdata/family-hub}/config:/app/config     # services.yaml
     networks:
+      - default
       - proxy
     labels:
       # ---------------- Traefik ----------------
@@ -92,6 +120,12 @@ services:
       net.unraid.docker.icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/astro.png
 
 networks:
+  # Pinned: dockerd has no --default-address-pool, so an unpinned network can land
+  # on 192.168.0.0/20 and swallow the LAN's 192.168.x routes.
+  default:
+    ipam:
+      config:
+        - subnet: ${DB_SUBNET:-172.16.0.0/24}
   proxy:
     name: ${TRAEFIK_NETWORK:-proxy}
     external: true
